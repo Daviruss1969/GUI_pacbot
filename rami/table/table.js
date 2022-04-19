@@ -496,7 +496,7 @@ var current;
 var previous;
 var blink = "up";
 
-add_objects(1,2,3);
+
 
 //getting the correct data of the robot
 function read_robot_input(){
@@ -546,6 +546,10 @@ function read_robot_input(){
           type = "other";
         }
 
+        if (i == 0){
+          type = "current";
+        }
+
         //Create an lego with the informations
         let lego = {
           type: type,
@@ -585,8 +589,9 @@ function read_robot_input(){
 
 var myVar;
 
-
-render_animate_selected();
+read_robot_input();
+render_animate_selected(); 
+//add_objects(1,2,3); //TODO to implemente the arm, uncomment this ligne and ligne 699 to 711
 
   var dir = new THREE.Vector3();
   var sph = new THREE.Spherical();
@@ -695,7 +700,7 @@ function animate_up() {
 
 }
 
-var prev_OG = Object();
+/*var prev_OG = Object();
 Object.assign(prev_OG, previous.position);
 
 var gripper = add_gripper("grey", prev_OG, "horizontal", scene);
@@ -707,7 +712,7 @@ gripper.position.y += (previous.position.y - prev_OG.y);
 var gripper_OG = Object();
 Object.assign(gripper_OG, gripper.position);
 
-animate_down();
+animate_down();*/
 
 // 
 // 
