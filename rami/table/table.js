@@ -362,7 +362,7 @@ function read_file(id, section) {
 
 //getting the correct data of the robot
 function read_robot_input(){
-  
+
   //get the json file and parse it
   var file = "../data/data.json";
   fetch(file).then(function(resp){
@@ -394,7 +394,8 @@ function read_robot_input(){
       let char = data[i][0].split('');
       let x = parseInt(char[5]+char[6]) - FloorWidth / 2;
       console.log(x);
-      let y = parseInt(char[2]+char[3]);
+      let y = -(parseInt(char[2]+char[3]) - FloorHeight / 2);
+      let z = parseInt(data[i][2]);
 
       
 
@@ -409,7 +410,7 @@ function read_robot_input(){
       }
 
       //we add the lego
-      add_LEGO(color, 1, 1, x, y, data[i][2], scene, false, type);
+      add_LEGO(color, 1, 1, x, y, z, scene, false, type);
     }
 
 
