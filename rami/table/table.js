@@ -1,4 +1,3 @@
-
 function addLight(scene){
     const color = 0xFFFFFF;
     const intensity = 1;
@@ -27,13 +26,17 @@ function createFloor(dim_x, dim_y, scene) {
   table.userData.name = 'table';
 
   scene.add(table);
-  addTableStuds(dim_x, dim_y, scene);
+  return addTableStuds(dim_x, dim_y, scene);
 }
 
 function addTableStuds(dim_x,dim_y, scene){
   x = computePlateLength(dim_x);
   y = computePlateLength(dim_y);
+  
+  stud_levels = [];
+
   for(var i=0; i<dim_x; i++){
+    stud_levels.push([]);
     for(var j=0; j<dim_y; j++){
       stud = new THREE.Mesh(new THREE.CylinderGeometry(STUD_WIDTH/2, STUD_WIDTH/2, STUD_HEIGHT, STUD_NUM_SIDES), new THREE.MeshLambertMaterial({ color: 0x00b300 }));
 
@@ -41,9 +44,14 @@ function addTableStuds(dim_x,dim_y, scene){
       stud.position.x = STUD_WIDTH / 2 + STUD_PADDING + i * (STUD_WIDTH + STUD_SPACING) - x/2
       stud.position.z = STUD_WIDTH / 2 + STUD_PADDING + j * (STUD_WIDTH + STUD_SPACING) - y/2
 
+      stud_levels[i].push(0);
+      stud.userData.id = i+"_"+j;
+
       scene.add(stud);
+      table_studs.push(stud);
     }
   }
+  return stud_levels;
 }
 
 function getColor(val){
@@ -80,12 +88,20 @@ function AddToGeometry(mainObject, objectToAdd) {
   return mesh ;
 }
 
-function add_LEGO(color, dim_x, dim_y, pos_x, pos_y, pos_z, scene, draggable, type) {
+function update_stud_levels_from_file(below_left, dim_x, dim_y) {
+  for (let i = below_left[0]; i < below_left[0] + dim_x; i++) 
+    for (let j = below_left[1] - dim_y + 1; j <= below_left[1]; j++) 
+      stud_levels[i][j] += 1;
+
+}
+
+function add_LEGO(color, dim_x, dim_y, pos_x, pos_y, pos_z, scene, draggable, type, update_stud_levels = true ) {
   x = computePlateLength(dim_x);
   z = computePlateLength(dim_y);
   col = getColor(color);
   var geometry = new THREE.BoxGeometry(x,LEGO_HEIGHT,z);
-  if (type == "previous"){
+
+  if (type != "current"){
     var material = new THREE.MeshBasicMaterial(
       {color: col,
       opacity: 1,
@@ -153,6 +169,15 @@ function add_LEGO(color, dim_x, dim_y, pos_x, pos_y, pos_z, scene, draggable, ty
 
   scene.add(cube);
 
+  if (update_stud_levels){
+    // updating the below studs
+    var below_left = [];
+    below_left.push(pos_x + 24);
+    below_left.push(Math.abs(pos_y) + 11);
+
+    update_stud_levels_from_file(below_left, dim_x, dim_y);
+  }
+
   return cube;
 }
 
@@ -160,9 +185,7 @@ function remove_LEGO(lego_obj) {
   // how to remove a lego
   scene.remove(lego_obj);
   objects.pop(lego_obj);
-
 }
-
 
 function draw_borders(cube, x, z, color, width) {
 
@@ -276,6 +299,101 @@ function draw_borders(cube, x, z, color, width) {
     cube.add(cube_4);
 }
 
+// adding, from saved data, the lego objects
+function read_file(id, section) {
+  const file = "../data/scenes.json";
+
+  fetch(file)
+    .then(function(resp){
+      return resp.json();
+    })
+    .then(function(data){
+      add_objects(data, id, section)
+    });
+}
+
+function add_objects(data, id, section) {
+
+
+  data = [{
+    "scene":2,
+    "section":"data",
+    "radio":true,
+    "text":true,
+    "table":[
+      {"dim":[6,2,1],"pos":[4,0,0], "color":"yellow", "type":"other"},
+      {"dim":[6,2,1],"pos":[-2,-2,0], "color":"red", "type":"previous"}
+    ]
+  }]
+
+  for (let s of data){
+    for (let obj of s.table){
+      dim = obj.dim;
+      pos = obj.pos;
+      color = obj.color;
+      type = obj.type;
+
+      if (type == 'current')
+        drag = true;
+      else
+        drag = false;
+      cub = add_LEGO(color, dim[0], dim[1], pos[0], pos[1], pos[2], scene, drag, type);
+    }
+  }
+}
+
+function blink_effect() {
+  if (current){
+    var t = current.material.opacity;
+
+    if (t == 1)
+      blink = "down";
+
+    if (t == 0.5)
+      blink = "up";
+
+    if (blink == 'up'){
+      t = 2*t;
+    }
+    else{
+      t = t/2;
+    }
+
+    for (let obj of current.children){
+      obj.material.transparent = true;
+      obj.material.opacity =  t;
+    }
+
+    current.material.transparent = true;
+    current.material.opacity =  t;
+  }
+}
+
+function render_animate_selected() {
+  clearInterval(myVar);
+  myVar = setInterval(function () {blink_effect()}, 800);
+}
+
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
 // 
 
 // main
@@ -286,14 +404,14 @@ function draw_borders(cube, x, z, color, width) {
   var STUD_PADDING = STUD_WIDTH / 3.2; // table sides
   var STUD_NUM_SIDES = 32;
   var LEGO_HEIGHT = 9.6;
-  var FloorWidth = 23;
-  var FloorHeight = 10;
+  var FloorWidth = 48;
+  var FloorHeight = 24;
 
   // table positions
-  var MIN_X = - computePlateLength(FloorWidth/2);
-  var MIN_Y = - computePlateLength(FloorHeight/2);
-  var MAX_X = computePlateLength(FloorWidth/2);
-  var MAX_Y = computePlateLength(FloorHeight/2);
+  var MIN_X = - computePlateLength(24);
+  var MIN_Y = - computePlateLength(12);
+  var MAX_X = computePlateLength(24);
+  var MAX_Y = computePlateLength(12);
 
   var objects = [];
 
@@ -302,8 +420,8 @@ function draw_borders(cube, x, z, color, width) {
   
 
   const init_pos_x = -1.902388126728884;
-  const init_pos_y = 195.6798407538288 - 70;
-  const init_pos_z = 83.03738904083703 - 35;
+  const init_pos_y = 195.6798407538288;
+  const init_pos_z = 83.03738904083703;
   
   const init_rot_x = -1.2028291652806293;
   const init_rot_y = 0.0017060211432452725;
@@ -313,130 +431,53 @@ function draw_borders(cube, x, z, color, width) {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-
-  // in order to rotate the table
-
-  // var orbit_controls = new THREE.OrbitControls(camera, renderer.domElement);
-  // orbit_controls.addEventListener('change', orbitChange);
-  // orbit_controls.addEventListener('end', orbitEnd);
-  // orbit_controls.addEventListener('start', orbitStart);
-  // orbit_controls.enabled = true;
-
-
   // LEGO table
+  table_studs = [];
+  stud_levels = createFloor(FloorWidth,FloorHeight, scene);
+  var latest_stud;
 
-  createFloor(FloorWidth,FloorHeight, scene);
 
   // light
   addLight(scene);
 
-// adding the lego objects
+  var isInStock = false;
+  var isInNav = false;
 
-function read_file(id, section) {
-  var file = "";
+  // stocks = ["stock_panel", "objects", "colors", "orientation", "representation"];
+  // navs = ["nav_panel", "rotate", "top", "bottom", "left", "right", "middle", "zoom_panel", "zoom_in", "zoom_out"];
+
+  // for (let elt in stocks){
+  //   document.getElementById(stocks[elt]).addEventListener("mouseenter", function(  ) {isInStock=true;});
+  //   document.getElementById(stocks[elt]).addEventListener("mouseout", function(  ) {isInStock=false;});
+  // }
   
-  if (section == "mirror")
-    file = "../data/mirrored_scenes.json";
-  if (section == "original")
-    file = "../data/scenes.json";
+  // for (let elt in navs){
+  //   document.getElementById(navs[elt]).addEventListener("mouseenter", function(  ) {isInNav=true;});
+  //   document.getElementById(navs[elt]).addEventListener("mouseout", function(  ) {isInNav=false;});
+  // }
 
-  console.log("file");
-  console.log(file);
-
-
-  fetch(file)
-    .then(function(resp){
-      return resp.json();
-    })
-    .then(function(data){
-      // adding the lego on the scene
-      console.log("id");
-      console.log(id);
-      console.log("section");
-      console.log(section);
-      add_objects(data, id, section)
-    });
-}
-
-
-
-//getting the correct data of the robot
-function read_robot_input(){
-
-  //get the json file and parse it
-  var file = "../data/data.json";
-  fetch(file).then(function(resp){
-    return resp.json();
-  }).then(function(data){
-    for (let i = 0; i < Object.keys(data).length; i++){
-      
-      //Color of the lego
-      let color;
-      switch(data[i][1]){
-        case 'b':
-          color = "blue";
-          break;
-        case 'g':
-          color = "green";
-          break;
-        case 'r':
-          color = "red";
-          break;
-        case 'y':
-          color = "yellow";
-          break;
-        default:
-          color = "blue";
-          break;
-      }
-
-      //position of the lego
-      let char = data[i][0].split('');
-      let x = parseInt(char[5]+char[6]) - FloorWidth / 2;
-      console.log(x);
-      let y = -(parseInt(char[2]+char[3]) - FloorHeight / 2);
-      let z = parseInt(data[i][2]);
-
-      
-
-      //Type of the lego
-      let type;
-      if (i == 0){
-        type = "current";
-      } else if (i == 1){
-        type = "previous"
-      }else{
-        type = "other";
-      }
-
-      //we add the lego
-      add_LEGO(color, 1, 1, x, y, z, scene, false, type);
-    }
-  })
-
-
-}
-
-function add_objects(data, id, section) {
-
-  for (let s of data){
-    if (s.scene != id){
-      continue;
-    }
-
-    for (let obj of s.table){
-      dim = obj.dim;
-      pos = obj.pos;
-      color = obj.color;
-      type = obj.type;
-
-      add_LEGO(color, dim[0], dim[1], pos[0], pos[1], pos[2], scene, false, type);
-    }
-  }
-}
-
-
-
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
 
 
 // getting file scene
@@ -445,57 +486,16 @@ const urlParams = new URLSearchParams(queryString);
 var id = urlParams.get('scene')
 var section = urlParams.get('what')
 
-
 // special lego objs
 var current;
 var previous;
 var blink = "up";
 
-// reading the file on the server
-//read_file(id, section);
-read_robot_input();
-
-function blink_effect() {
-  // if (current.parent === scene) {
-  //   scene.remove(current);
-  // } else {
-  //   scene.add(current);
-  // }
-  /*console.log("current")
-  console.log(current)*/
-  var t = current.material.opacity;
-
-  if (t == 1)
-    blink = "down";
-
-  if (t == 0.5)
-    blink = "up";
-
-  if (blink == 'up'){
-    t = 2*t;
-  }
-  else{
-    t = t/2;
-  }
-  current.material.transparent = true;
-  current.material.opacity =  t;
-
-  for (let obj of current.children){
-    obj.material.transparent = true;
-    obj.material.opacity =  t;
-  }
-}
-
-
-
+add_objects(1,2,3);
 
 
 var myVar;
 
-function render_animate_selected() {
-  clearInterval(myVar);
-  myVar = setInterval(function () {blink_effect()}, 800);
-}
 
 render_animate_selected();
 
@@ -504,12 +504,121 @@ render_animate_selected();
 
 
   renderer.setAnimationLoop(() => {
-    dragObject();
     renderer.render(scene, camera);
     camera.getWorldDirection(dir);
     sph.setFromVector3(dir);
   });
 
+var id;
+
+
+function add_gripper(color, pos, orientation, scene) {
+
+  col = getColor(color);
+
+  pole_height = LEGO_HEIGHT*30;
+
+  var pole_geometry = new THREE.BoxGeometry(STUD_WIDTH*0.4,pole_height,STUD_WIDTH*0.4);
+  var pole_material = new THREE.MeshBasicMaterial({color: col});
+  var pole = new THREE.Mesh(pole_geometry,pole_material);
+  pole.position.y = pos.y + LEGO_HEIGHT/2 + pole_height/2;
+  pole.position.x = pos.x;
+  pole.position.z = pos.z;
+  pole.userData.name = "pole";
+
+
+  // children
+
+  var base_geometry = new THREE.BoxGeometry(STUD_WIDTH,STUD_HEIGHT/2,STUD_WIDTH);
+  var base_material = new THREE.MeshBasicMaterial({color: col});
+  var base = new THREE.Mesh(base_geometry,base_material);
+  base.position.y = pos.y - pole.position.y + STUD_WIDTH ;
+  base.position.x = pos.x - pole.position.x;
+  base.position.z = pos.z - pole.position.z;
+  base.userData.name = "base";
+
+  // grippers
+
+  cub_size = STUD_SPACING + 2*(STUD_PADDING+STUD_WIDTH);
+
+  var grip_right_geometry = new THREE.BoxGeometry(1.5*cub_size,STUD_HEIGHT,0.5*STUD_WIDTH);
+  var grip_right_material = new THREE.MeshBasicMaterial({color: col});
+  var grip_right = new THREE.Mesh(grip_right_geometry,grip_right_material);
+  grip_right.position.y = pos.y - pole.position.y + 1.5*STUD_WIDTH ;
+  grip_right.position.x = pos.x - pole.position.x;
+  grip_right.position.z = pos.z - pole.position.z;
+  grip_right.rotation.set(0, Math.PI/4, 0);
+  grip_right.userData.name = "grip_right";
+
+
+  var grip_left = new THREE.Mesh(grip_right_geometry,grip_right_material);
+  grip_left.position.y = pos.y - pole.position.y + 1.5*STUD_WIDTH ;
+  grip_left.position.x = pos.x - pole.position.x;
+  grip_left.position.z = pos.z - pole.position.z;
+  grip_left.rotation.set(0, -Math.PI/4, 0);
+  grip_left.userData.name = "grip_left";
+
+
+  // adding to pole
+  pole.add(grip_right);
+  pole.add(grip_left);
+  pole.add(base);
+
+
+  // adding to scene
+  scene.add(pole);
+
+  return pole;
+}
+
+
+function animate_down() {
+
+    id = requestAnimationFrame( animate_down );
+
+    renderer.render( scene, camera );
+
+
+    if (previous.position.y <= prev_OG.y){
+      previous.position.y = prev_OG.y;
+      cancelAnimationFrame( id );
+      animate_up();
+    }
+    else{
+      previous.position.y -= prev_OG.y/2;
+      gripper.position.y -= prev_OG.y/2;
+    }
+
+}
+
+function animate_up() {
+    id = requestAnimationFrame( animate_up );
+
+    renderer.render( scene, camera );
+
+
+    if (gripper.position.y >= gripper_OG.y){
+      cancelAnimationFrame( id );
+    }
+    else{
+      gripper.position.y += prev_OG.y/2;
+    }
+
+}
+
+var prev_OG = Object();
+Object.assign(prev_OG, previous.position);
+
+var gripper = add_gripper("grey", prev_OG, "horizontal", scene);
+
+
+previous.position.y *= 25;
+gripper.position.y += (previous.position.y - prev_OG.y);
+
+var gripper_OG = Object();
+Object.assign(gripper_OG, gripper.position);
+
+animate_down();
 
 // 
 // 
@@ -536,254 +645,338 @@ render_animate_selected();
 // 
 // start dragging
 
-const raycaster = new THREE.Raycaster();
-const mouseClick = new THREE.Vector2();
-const mouseMove = new THREE.Vector2();
-var draggable = null;
+  const raycaster = new THREE.Raycaster();
+  const mouseClick = new THREE.Vector2();
+  const mouseMove = new THREE.Vector2();
+  var draggable = null;
 
-function onMouseMove( event ) {
+  var holding = false;
 
-  // calculate mouse position in normalized device coordinates
-  // (-1 to +1) for both components
-  mouseMove.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-  mouseMove.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+  // console.log(table_studs);
+
+  function toScreenPosition(obj, camera)
+    {
+      var vector = new THREE.Vector3();
+
+      var widthHalf = 0.5*renderer.context.canvas.width;
+      var heightHalf = 0.5*renderer.context.canvas.height;
+
+      obj.updateMatrixWorld();
+      vector.setFromMatrixPosition(obj.matrixWorld);
+      vector.project(camera);
+
+      vector.x = ( vector.x * widthHalf ) + widthHalf;
+      vector.y = - ( vector.y * heightHalf ) + heightHalf;
+
+      return { 
+          x: vector.x,
+          y: vector.y
+      };
+
+  };
+
+  function onMouseMove( event ) {
+
+    if (isInNav || isInStock)
+      return;
+
+    // calculate mouse position in normalized device coordinates
+    // (-1 to +1) for both components
+
+    mouseMove.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+    mouseMove.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+    
+
+    
+    if (draggable){
+      min_stud = null;
+      minDist = Infinity;
 
 
-}
-function onMouseClick( event ) {
+      mouse_x = event.clientX;
+      mouse_y = event.clientY;
 
-  if (draggable){
-    console.log("holding nothing.");
-    draggable = null;
-    return;
-  }
-
-
-  // calculate mouse position in normalized device coordinates
-  // (-1 to +1) for both components
-  mouseClick.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-  mouseClick.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-
-  // update the picking ray with the camera and mouse position
-  raycaster.setFromCamera( mouseClick, camera );
-
-  const found = raycaster.intersectObjects( scene.children );
-
-
-  if (found.length > 0 && objects.includes(found[0].object)){
-    draggable = found[0].object;
-    console.log(draggable.userData.name);
-  }
-  else{
-    console.log(found.length);
-    console.log(objects);
-
-  }
-}
-
-function dragObject(){
-  if(draggable){
-    raycaster.setFromCamera(mouseMove, camera);
-    const found = raycaster.intersectObjects( scene.children );
-  
-    if (found.length > 0){
-        if(mouse_on_table(found)){
-          reposition(found);
+      for (let stud of table_studs){
+        stud_2d_pos = toScreenPosition(stud, camera);
+        newDist = Math.pow(stud_2d_pos.x - mouse_x,2) + Math.pow(stud_2d_pos.y - mouse_y,2);
+        if (newDist < minDist){
+          minDist = newDist;
+          min_stud = stud;
+          min_stud_2d_pos = stud_2d_pos;
         }
+      }
+      latest_stud = dragObject(min_stud);
     }
   }
-}
 
-function reposition(found) {
-  var drag_box = new THREE.Box3().setFromObject(draggable);
-  draggable.position.y = PLATE_HEIGHT + LEGO_HEIGHT/2;
+  function update_stud_levels(stud, dim, num) {
 
-  for (let obj of all_obj){
-    leg_obj = get_cube(obj);
-    if (leg_obj == draggable)
-      continue
-    var obj_box = new THREE.Box3().setFromObject(leg_obj);
+    var id = stud.userData.id;
+    var words = id.split('_');
+    var id_x = parseInt(words[0]);
+    var id_y = parseInt(words[1]);
 
-    collision = drag_box.intersectsBox(obj_box);
+    click_x = (dim[0]/2)-1;
+    click_y = (dim[1]/2)-1;
 
-    if(collision){
-      console.log("collision");
-      draggable.position.y += LEGO_HEIGHT;
-      draggable.position.x = found[0].point.x;
-      draggable.position.z = found[0].point.z;
-      reposition(found);
+    for (let i = id_x - click_x; i < id_x + parseInt(dim[0]) - click_x; i++) {
+      for (let j = id_y - click_y; j < id_y + parseInt(dim[1]) - click_y; j++) {
+        if (i>=0 && j>=0){
+          stud_levels[i][j] += num;
+        }
+      }
+    }
+
+  }
+
+  function onMouseClick( event ) {
+    if (isInNav || isInStock)
       return;
+
+    raycaster.setFromCamera(mouseMove, camera);
+    var f = raycaster.intersectObjects( scene.children );
+    if (mouse_on_table(f)){
+      if (draggable){
+        // this is where we are letting go of the object
+        draggable = null;
+
+        var dim = draggable.userData.name.split("_")[0].split("x");
+        update_stud_levels(latest_stud, [parseInt(dim[0]), parseInt(dim_y[1])], 1);
+
+        return;
+      }
+    }
+
+    // calculate mouse position in normalized device coordinates
+    // (-1 to +1) for both components
+    mouseClick.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+    mouseClick.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+    // update the picking ray with the camera and mouse position
+    raycaster.setFromCamera( mouseClick, camera );
+
+    const found = raycaster.intersectObjects( scene.children );
+
+
+    if (found.length > 0 && objects.includes(found[0].object)){
+      draggable = found[0].object;
+      console.log(draggable.userData.name);
+      var dim = draggable.userData.name.split("_")[0].split("x");
+      update_stud_levels(latest_stud, [parseInt(dim[0]), parseInt(dim_y[1])], -1);
+
     }
     else{
-      console.log("no collision");
+      // console.log(found.length);
+      // console.log(objects);
+
     }
   }
 
-  // reposition_down();
+  function get_under_obj_studs(stud, dim) {
+    var studs = [];
+    var ids = [];
 
-  draggable.position.x = found[0].point.x;
-  draggable.position.z = found[0].point.z;
-}
+    var id = stud.userData.id;
+    var words = id.split('_');
+    var id_x = parseInt(words[0]);
+    var id_y = parseInt(words[1]);
 
-function reposition_down() {
-  for (let obj of all_obj){
-    leg_obj = get_cube(obj);
-    if (leg_obj == draggable)
-      continue
-    var obj_box = new THREE.Box3().setFromObject(leg_obj);
+    click_x = (dim[0]/2)-1;
+    click_y = (dim[1]/2)-1;
 
-    collision_drop = drag_box.intersectsBox(obj_box);
 
-    if(collision_drop)
-      break;
+    for (let i = id_x - click_x; i < id_x + parseInt(dim[0]) - click_x; i++) {
+      for (let j = id_y - parseInt(dim[1]) + click_y + 1; j <= id_y + click_y; j++) {
+        if (i>=0 && j>=0){
+          console.log(i);
+          console.log(j);
+          studs.push(stud_levels[i][j]);
+          ids.push(i+"_"+j);
+        }
+      }
+    }
+
+    console.log("ids");
+    console.log(ids);
+
+    return studs
   }
 
-  // if 
-}
+  function get_studs_from_ids(ids) {
+    var studs = [];
+    for (let id of table_studs){
+      if (ids.includes(stud.userData.id)){
+        studs.push(stud);
+      }
+    }
+    return studs;
+  }
 
-function mouse_on_table(found) {
-  for (let o of found){
-    if (o.object.userData.name == 'table'){
-      console.log("mouse_on_table");
-      
-      return true;
+  function dragObject(stud){
+    if(draggable){
+      raycaster.setFromCamera(mouseMove, camera);
+      const found = raycaster.intersectObjects( scene.children );
+    
+      if (mouse_on_table(found)){
+        reposition(draggable, stud);
+      }
     }
   }
-  console.log("not mouse_on_table");
 
-  return false;
-}
+  function reposition(draggable, stud) {
+    draggable.position.x = stud.position.x + (STUD_PADDING + STUD_WIDTH/2);
+    draggable.position.z = stud.position.z - (STUD_PADDING + STUD_WIDTH/2);
 
-function get_cube(obj) {
-  parent = obj.parent;
-  
-  // cube and not studs
-  if (parent == scene){
-    return obj;
+    dim = draggable.userData.name.split("_")[0].split("x");
+    studs = get_under_obj_studs(stud, dim)
+
+    console.log("studs");
+    console.log(studs);
+    level = get_max_level_below(studs)
+
+    console.log("level");
+    console.log(level);
+
+    draggable.position.y = (0.5 + level)*LEGO_HEIGHT + PLATE_HEIGHT;
+    console.log("end reposition");  
   }
 
-  return parent;
-}
+  function get_max_level_below(studs) {
+    var max = 0;
+    for (let lvl of studs){
+      if (lvl > max)
+        max = lvl;
+    }
+    return max; 
+  }
 
-window.addEventListener( 'click', onMouseClick, true );
-window.addEventListener( 'mousemove', onMouseMove, true );
+  function mouse_on_table(found) {
+    for (let o of found){
+      if (o.object.userData.name == 'table'){
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function get_cube(obj) {
+    parent = obj.parent;
+    
+    // cube and not studs
+    if (parent == scene){
+      return obj;
+    }
+
+    return parent;
+  }
+
+  window.addEventListener( 'click', onMouseClick, true );
+  window.addEventListener( 'mousemove', onMouseMove, true );
 
 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
 // end dragging
 
-// start navigation orbit test
 
-document.getElementById("top").addEventListener("click", function() {
-  
-  var new_rot_x = scene.rotation.x + Math.PI/10;
-  var new_rot_y = scene.rotation.y;
-  var new_rot_z = scene.rotation.z;
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// 
 
-  scene.rotation.set(new_rot_x, new_rot_y, new_rot_z);
-});
+// start navigation orbit
 
-document.getElementById("bottom").addEventListener("click", function() {
-  var new_rot_x = scene.rotation.x - Math.PI/10;
-  var new_rot_y = scene.rotation.y;
-  var new_rot_z = scene.rotation.z;
+  document.getElementById("top").addEventListener("click", function() {
+    var new_pos_x = camera.position.x;
+    var new_pos_y = camera.position.y;
+    var new_pos_z = camera.position.z - 40;
 
-  scene.rotation.set(new_rot_x, new_rot_y, new_rot_z);
+    camera.position.set(new_pos_x, new_pos_y, new_pos_z);
+  });
 
-});
+  document.getElementById("bottom").addEventListener("click", function() {
+    var new_pos_x = camera.position.x;
+    var new_pos_y = camera.position.y;
+    var new_pos_z = camera.position.z + 40;
 
-document.getElementById("right").addEventListener("click", function() {
-  var new_rot_x = scene.rotation.x;
-  var new_rot_y = scene.rotation.y - Math.PI/10;
-  var new_rot_z = scene.rotation.z;
+    camera.position.set(new_pos_x, new_pos_y, new_pos_z);
 
-  compass.style.transform = `rotate(${-180*new_rot_y/Math.PI}deg)`;
+  });
 
-  scene.rotation.set(new_rot_x, new_rot_y, new_rot_z);
-});
+  document.getElementById("right").addEventListener("click", function() {
+    var new_pos_x = camera.position.x + 40;
+    var new_pos_y = camera.position.y;
+    var new_pos_z = camera.position.z;
 
-document.getElementById("left").addEventListener("click", function() {
-  var new_rot_x = scene.rotation.x;
-  var new_rot_y = scene.rotation.y + Math.PI/10;
-  var new_rot_z = scene.rotation.z;
+    camera.position.set(new_pos_x, new_pos_y, new_pos_z);
 
-  compass.style.transform = `rotate(${-180*new_rot_y/Math.PI}deg)`;
+  });
 
-  scene.rotation.set(new_rot_x, new_rot_y, new_rot_z);
-});
+  document.getElementById("left").addEventListener("click", function() {
+    var new_pos_x = camera.position.x - 40;
+    var new_pos_y = camera.position.y;
+    var new_pos_z = camera.position.z;
 
-document.getElementById("middle").addEventListener("click", function() {
-  camera.position.set(init_pos_x, init_pos_y, init_pos_z);
-  camera.rotation.set(init_rot_x, init_rot_y, init_rot_z);
-  scene.rotation.set(0, 0, 0);
+    camera.position.set(new_pos_x, new_pos_y, new_pos_z);
+  });
 
-  compass.style.transform = `rotate(${0}deg)`;
+  document.getElementById("middle").addEventListener("click", function() {
+    camera.position.set(init_pos_x, init_pos_y, init_pos_z);
+    camera.rotation.set(init_rot_x, init_rot_y, init_rot_z);
+    scene.rotation.set(0, 0, 0);
+
+    compass.style.transform = `rotate(${0}deg)`;
 
 
-});
+  });
 
-document.getElementById("zoom_in").addEventListener("click", function() {
-  var new_pos_x = camera.position.x;
-  var new_pos_y = camera.position.y - 10;
-  var new_pos_z = camera.position.z - 5;
+  document.getElementById("zoom_in").addEventListener("click", function() {
+    var new_pos_x = camera.position.x;
+    var new_pos_y = camera.position.y - 10;
+    var new_pos_z = camera.position.z - 5;
 
-  camera.position.set(new_pos_x, new_pos_y, new_pos_z);
+    camera.position.set(new_pos_x, new_pos_y, new_pos_z);
 
-});
+  });
 
-document.getElementById("zoom_out").addEventListener("click", function() {
-  var new_pos_x = camera.position.x;
-  var new_pos_y = camera.position.y + 10;
-  var new_pos_z = camera.position.z + 5;
+  document.getElementById("zoom_out").addEventListener("click", function() {
+    var new_pos_x = camera.position.x;
+    var new_pos_y = camera.position.y + 10;
+    var new_pos_z = camera.position.z + 5;
 
-  camera.position.set(new_pos_x, new_pos_y, new_pos_z);
+    camera.position.set(new_pos_x, new_pos_y, new_pos_z);
 
-});
+  });
 
-document.getElementById("move_left").addEventListener("click", function() {
-  var new_pos_x = camera.position.x - 40;
-  var new_pos_y = camera.position.y;
-  var new_pos_z = camera.position.z;
+// end navigation orbit
 
-  camera.position.set(new_pos_x, new_pos_y, new_pos_z);
+// start new object creation
+  var created = null;
 
-});
+  // document.getElementById("representation").addEventListener("click", function() {
+  //   scene.remove(current);
+  //   if (created != null)
+  //     remove_LEGO(created);
+  //   created = add_LEGO(selected.color, selected.dim[0], selected.dim[1], selected.pos[0], selected.pos[1], selected.pos[2], scene, true, "current", false);
+  // });
 
-document.getElementById("move_right").addEventListener("click", function() {
-  var new_pos_x = camera.position.x + 40;
-  var new_pos_y = camera.position.y;
-  var new_pos_z = camera.position.z;
-
-  camera.position.set(new_pos_x, new_pos_y, new_pos_z);
-
-});
-
+// end new object creation
 
 camera.position.set(init_pos_x, init_pos_y, init_pos_z);
 camera.rotation.set(init_rot_x, init_rot_y, init_rot_z);
-
-// end navigation orbit test
-
-
