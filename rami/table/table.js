@@ -1,4 +1,3 @@
-
 function addLight(scene){
     const color = 0xFFFFFF;
     const intensity = 1;
@@ -330,7 +329,11 @@ function draw_borders(cube, x, z, color, width) {
   // light
   addLight(scene);
 
-// adding the lego objects
+// adding the lego object
+var legos = new Array();
+
+
+
 
 function read_file(id, section) {
   var file = "";
@@ -368,53 +371,81 @@ function read_robot_input(){
   fetch(file).then(function(resp){
     return resp.json();
   }).then(function(data){
+    
+    //Iterate trought object receive
     for (let i = 0; i < Object.keys(data).length; i++){
-      
-      //Color of the lego
-      let color;
-      switch(data[i][1]){
-        case 'b':
-          color = "blue";
-          break;
-        case 'g':
-          color = "green";
-          break;
-        case 'r':
-          color = "red";
-          break;
-        case 'y':
-          color = "yellow";
-          break;
-        default:
-          color = "blue";
-          break;
-      }
 
-      //position of the lego
-      let char = data[i][0].split('');
-      let x = parseInt(char[5]+char[6]) - FloorWidth / 2;
-      console.log(x);
-      let y = -(parseInt(char[2]+char[3]) - FloorHeight / 2);
-      let z = parseInt(data[i][2]);
+      //if the case isn't define
+      if (legos[i] == undefined){
 
-      
+        //Choose the color
+        let color;
+        switch(data[i][1]){
+          case 'b':
+            color = "blue";
+            break;
+          case 'g':
+            color = "green";
+            break;
+          case 'r':
+            color = "red";
+            break;
+          case 'y':
+            color = "yellow";
+            break;
+          default:
+            color = "blue";
+            break;
+        }
 
-      //Type of the lego
-      let type;
-      if (i == 0){
-        type = "current";
-      } else if (i == 1){
-        type = "previous"
+        //Split for the position
+        let char = data[i][0].split('');
+
+        //Type of the lego
+        let type;
+        if (i == Object.keys(data).length - 1){
+          type = "current";
+        } else if (i == Object.keys(data).length - 2){
+          type = "previous"
+        }else{
+          type = "other";
+        }
+
+        //Create an lego with the informations
+        let lego = {
+          type: type,
+
+          position : {
+            x : parseInt(char[5]+char[6]) - FloorWidth / 2,
+            y : -(parseInt(char[2]+char[3]) - FloorHeight / 2),
+            z : parseInt(data[i][2])
+          },
+
+          color : color          
+        }
+
+        //add to the vector
+        legos.push(lego);
       }else{
-        type = "other";
+        
       }
+
+      
+
+
 
       //we add the lego
-      add_LEGO(color, 1, 1, x, y, z, scene, false, type);
+      add_LEGO(legos[i]["color"], 
+              1, 
+              1, 
+              legos[i]["position"]["x"], 
+              legos[i]["position"]["y"], 
+              legos[i]["position"]["z"], 
+              scene, 
+              false, 
+              legos[i]["type"]);
     }
   })
-
-
 }
 
 function add_objects(data, id, section) {
