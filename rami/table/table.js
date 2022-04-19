@@ -387,7 +387,7 @@ function read_robot_input(){
           color = "blue";
           break;
       }
-      console.log("couleur : "+color);
+      console.log("couleur : "+color); //test
 
 
       console.log(data[i][0]);
