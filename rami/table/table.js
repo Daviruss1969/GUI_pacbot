@@ -286,14 +286,14 @@ function draw_borders(cube, x, z, color, width) {
   var STUD_PADDING = STUD_WIDTH / 3.2; // table sides
   var STUD_NUM_SIDES = 32;
   var LEGO_HEIGHT = 9.6;
-  var FloorWidth = 48;
-  var FloorHeight = 24;
+  var FloorWidth = 23;
+  var FloorHeight = 10;
 
   // table positions
-  var MIN_X = - computePlateLength(24);
-  var MIN_Y = - computePlateLength(12);
-  var MAX_X = computePlateLength(24);
-  var MAX_Y = computePlateLength(12);
+  var MIN_X = - computePlateLength(FloorWidth/2);
+  var MIN_Y = - computePlateLength(FloorHeight/2);
+  var MAX_X = computePlateLength(FloorWidth/2);
+  var MAX_Y = computePlateLength(FloorHeight/2);
 
   var objects = [];
 
@@ -412,9 +412,6 @@ function read_robot_input(){
       //we add the lego
       add_LEGO(color, 1, 1, x, y, z, scene, false, type);
     }
-
-
-
   })
 
 
