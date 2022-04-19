@@ -362,13 +362,15 @@ function read_file(id, section) {
 
 //getting the correct data of the robot
 function read_robot_input(){
+  
+  //get the json file and parse it
   var file = "../data/data.json";
   fetch(file).then(function(resp){
     return resp.json();
   }).then(function(data){
     for (let i = 0; i < Object.keys(data).length; i++){
       
-      
+      //Color of the lego
       let color;
       switch(data[i][1]){
         case 'b':
@@ -387,24 +389,29 @@ function read_robot_input(){
           color = "blue";
           break;
       }
-      console.log("couleur : "+color); //test
 
-
-      console.log(data[i][0]);
+      //position of the lego
       let char = data[i][0].split('');
-      let x = (char[2]+char[3]);
-      let y = (char[5]+char[6]) - FloorWidth / 2;
+      let x = parseInt(char[5]+char[6]) - FloorWidth / 2;
+      console.log(x);
+      let y = parseInt(char[2]+char[3]);
+
       
+
+      //Type of the lego
       let type;
       if (i == 0){
         type = "current";
-      } else{
+      } else if (i == 1){
+        type = "previous"
+      }else{
         type = "other";
       }
 
+      //we add the lego
+      add_LEGO(color, 1, 1, x, y, data[i][2], scene, false, type);
+    }
 
-      add_LEGO(color, 1, 1, y, x, data[i][2], scene, false, type);
-    } 
 
 
   })
@@ -418,8 +425,7 @@ function add_objects(data, id, section) {
     if (s.scene != id){
       continue;
     }
-    console.log(s.scene);
-    console.log(s.table);
+
     for (let obj of s.table){
       dim = obj.dim;
       pos = obj.pos;
