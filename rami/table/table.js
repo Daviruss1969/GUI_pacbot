@@ -358,13 +358,68 @@ function read_file(id, section) {
     });
 }
 
+
+
+//getting the correct data of the robot
+function read_robot_input(){
+  var file = "../data/data.json";
+  fetch(file).then(function(resp){
+    return resp.json();
+  }).then(function(data){
+    for (let i = 0; i < Object.keys(data).length; i++){
+      
+      
+      let color;
+      switch(data[i][1]){
+        case 'b':
+          color = "blue";
+          break;
+        case 'g':
+          color = "green";
+          break;
+        case 'r':
+          color = "red";
+          break;
+        case 'y':
+          color = "yellow";
+          break;
+        default:
+          color = "blue";
+          break;
+      }
+      console.log("couleur : "+color);
+
+
+      console.log(data[i][0]);
+      let char = data[i][0].split('');
+      let x = (char[2]+char[3]);
+      let y = (char[5]+char[6]) - FloorWidth / 2;
+      
+      let type;
+      if (i == 0){
+        type = "current";
+      } else{
+        type = "other";
+      }
+
+
+      add_LEGO(color, 1, 1, y, x, data[i][2], scene, false, type);
+    } 
+
+
+  })
+
+
+}
+
 function add_objects(data, id, section) {
 
   for (let s of data){
     if (s.scene != id){
       continue;
     }
-
+    console.log(s.scene);
+    console.log(s.table);
     for (let obj of s.table){
       dim = obj.dim;
       pos = obj.pos;
@@ -375,6 +430,10 @@ function add_objects(data, id, section) {
     }
   }
 }
+
+
+
+
 
 // getting file scene
 const queryString = window.location.search;
@@ -389,7 +448,8 @@ var previous;
 var blink = "up";
 
 // reading the file on the server
-read_file(id, section);
+//read_file(id, section);
+read_robot_input();
 
 function blink_effect() {
   // if (current.parent === scene) {
@@ -397,8 +457,8 @@ function blink_effect() {
   // } else {
   //   scene.add(current);
   // }
-  console.log("current")
-  console.log(current)
+  /*console.log("current")
+  console.log(current)*/
   var t = current.material.opacity;
 
   if (t == 1)
