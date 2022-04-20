@@ -372,6 +372,7 @@ function blink_effect() {
 function render_animate_selected() {
   clearInterval(myVar);
   myVar = setInterval(function () {blink_effect()}, 800);
+  //myVar = setInterval(function() {read_robot_input()}, 10000);
 }
 
 // 
@@ -441,7 +442,7 @@ function render_animate_selected() {
   addLight(scene);
 
 // adding the lego object
-var legos = new Array();
+var legos = new Map();
 
 
 
@@ -510,9 +511,8 @@ function read_robot_input(){
     //Iterate trought object receive
     for (let i = 0; i < Object.keys(data).length; i++){
 
-      //if the case isn't define
+      //if the lego isn't define
       if (legos[i] == undefined){
-
         //Choose the color
         let color;
         switch(data[i][1]){
@@ -532,10 +532,10 @@ function read_robot_input(){
             color = "blue";
             break;
         }
-
+        
         //Split for the position
         let char = data[i][0].split('');
-
+        
         //Type of the lego
         let type;
         if (i == Object.keys(data).length - 1){
@@ -545,32 +545,38 @@ function read_robot_input(){
         }else{
           type = "other";
         }
-
+        
         if (i == 0){
           type = "current";
         }
-
+        
         //Create an lego with the informations
-        let lego = {
+        var lego = {
           type: type,
-
+        
           position : {
             x : parseInt(char[5]+char[6]) - FloorWidth / 2,
             y : -(parseInt(char[2]+char[3]) - FloorHeight / 2),
             z : parseInt(data[i][2])
           },
-
+        
           color : color          
         }
-
-        //add to the vector
-        legos.push(lego);
-      }else{
         
+        //add to the vector
+        legos.set(lego);
       }
 
       
-
+      // TODO POUR DEMAIN ESSAYE DE STOCKER ES VALEURS DANS UN TABLEAU DE LA FORME:
+      /*
+        1,0 : //x,y
+          0 : infos // z : infos
+          1 : infos
+        1,2 : 
+          0 : infos
+          1 : infos
+      */
 
 
       //we add the lego
@@ -587,7 +593,12 @@ function read_robot_input(){
   })
 }
 
+//check if there is something under and if there not add something
+function checkUnder(lego){
+}
+
 var myVar;
+var update;
 
 read_robot_input();
 render_animate_selected(); 
