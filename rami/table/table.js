@@ -63,7 +63,9 @@ function getColor(val){
     green:  0x00b300,
     red:    0xd10000,
     blue:   0x003399,
-    yellow: 0xe6e600
+    yellow: 0xe6e600,
+    olive:  0x808000,
+    light_green: 0x90EE90
   }
   return codes[val];
 }
@@ -75,7 +77,9 @@ function get_dark_Color(val){
     green:  0x0D930D,
     red:    0xC31E1E,
     blue:   0x0C1F7F,
-    yellow: 0xD2DA1D
+    yellow: 0xD2DA1D,
+    olive:  0x556B2F,
+    light_green: 0x8FBC8F
   }
   return codes[val];
 }
@@ -531,7 +535,7 @@ function read_robot_input(file = "../data/data.json"){
         z : parseInt(data[key][1])
       }
 
-      // 2 case if there is no legos or if there is one more legos in the x,y coords
+      // 2 case if there is no legos at x,y coords or if there is one more legos in the x,y coords
       if (legos.get(key) == undefined || JSON.stringify(legos.get(key)["position"]) != JSON.stringify(position)){
         //Choose the color
         let color;
@@ -547,6 +551,12 @@ function read_robot_input(file = "../data/data.json"){
             break;
           case 'y':
             color = "yellow";
+            break;
+          case 'o':
+            color = "olive";
+            break;
+          case 'l':
+            color = "light_green";
             break;
           default:
             color = "black";
@@ -608,11 +618,11 @@ function updateLegos(){
 
   //if there is a previous one 
   if (previous != undefined){
-    let hexa = '#';
-
-    //get the info
+    //get the name of the color with the function
     let color = previous["material"]["color"];
     color = colorNameFromTreeJSColors(color);
+
+    //get position
     let x = previous["position"]["x"];
     let y = previous["position"]["y"];
     let z = previous["position"]["z"];
@@ -663,41 +673,38 @@ function updateLegos(){
 
 
 }
+//what i'm not sure :
+//the color will always work ?
+//the fact that I set something to false above will always work ?
 
+/* 
+  this function take a color in entrie like this :
+    R : 0.9
+    G : 0
+    B : 0.7364
+  and check the correspondance to return the good color name
+*/
 function colorNameFromTreeJSColors(color){
-  let hexa = '#';
-  if( color['r'] == 0){
-    hexa += '00';
-  } else{
-    let tmp = parseInt(255/color['r']);
-    if (tmp >= 255){
-      hexa += "FF";
-    } else{
-      hexa += tmp.toString(16);
-    }
+
+  //get the colors string defined clearely:
+  let calc = color["r"].toFixed(3).toString()+'-'+color["g"].toFixed(3).toString()+'-'+color["b"].toFixed(3).toString();
+
+  //test the combinaison
+  if (calc == "0.502-0.502-0.000"){ //olive
+    return "olive";
+  }else if (calc == "0.820-0.000-0.000"){ //red
+    return "red";
+  }else if (calc == "0.902-0.902-0.000") { //yellow
+    return "yellow";
+  }else if (calc == "0.000-0.702-0.000"){ // green
+    return "green";
+  }else if (calc == "0.000-0.200-0.600"){ //blue
+    return "blue"; 
+  }else if (calc == "0.565-0.933-0.565"){ //light green
+    return "light_green";
+  }else{ //others
+    return "black";
   }
-  if( color['g'] == 0){
-    hexa += '00';
-  } else{
-    let tmp = parseInt(255/color['g']);
-    if (tmp >= 255){
-      hexa += "FF";
-    } else{
-      hexa += tmp.toString(16);
-    }
-  }
-  if( color['b'] == 0){
-    hexa += '00';
-  } else{
-    let tmp = parseInt(255/color['b']);
-    if (tmp >= 255){
-      hexa += "FF";
-    } else{
-      hexa += tmp.toString(16);
-    }
-  }
-  let result = ntc.name(hexa);
-  return result[1].toLowerCase();
 }
 
 var myVar;
