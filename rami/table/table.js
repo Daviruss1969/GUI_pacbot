@@ -1179,6 +1179,51 @@ animate_down();*/
 
   });
 
+
+  // zoom with mouse
+  document.addEventListener("wheel", function(){
+    //wheel goes up or down
+    if (event.deltaY > 0){
+      var new_pos_x = camera.position.x;
+      var new_pos_y = camera.position.y + 10;
+      var new_pos_z = camera.position.z + 5;
+  
+      camera.position.set(new_pos_x, new_pos_y, new_pos_z);
+    }else{
+      var new_pos_x = camera.position.x;
+      var new_pos_y = camera.position.y - 10;
+      var new_pos_z = camera.position.z - 5;
+  
+      camera.position.set(new_pos_x, new_pos_y, new_pos_z);
+    }
+  });
+
+  document.addEventListener("keydown", function(event){
+    let dX = 0;
+    let dZ = 0;
+    switch(event.key){
+      case "ArrowRight":
+        dX = 40;
+        break;
+      case "ArrowLeft":
+        dX = -40;
+        break;
+      case "ArrowUp":
+        dZ = -40;
+        break;
+      case "ArrowDown":
+        dZ = 40;
+        break;
+    }
+
+    var new_pos_x = camera.position.x + dX;
+    var new_pos_y = camera.position.y;
+    var new_pos_z = camera.position.z + dZ;
+
+    camera.position.set(new_pos_x, new_pos_y, new_pos_z);
+
+  });
+
 // end navigation orbit
 
 // start new object creation
