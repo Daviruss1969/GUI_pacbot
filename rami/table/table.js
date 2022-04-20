@@ -372,7 +372,6 @@ function blink_effect() {
 function render_animate_selected() {
   clearInterval(myVar);
   myVar = setInterval(function () {blink_effect()}, 800);
-  //myVar = setInterval(function() {read_robot_input()}, 10000);
 }
 
 // 
@@ -441,8 +440,8 @@ function render_animate_selected() {
   // light
   addLight(scene);
 
-// adding the lego object
-var legos = new Map();
+// this legos array contains the informations of the top legos in x,y coordinate
+var legos = new Array();
 
 
 
@@ -500,19 +499,27 @@ var blink = "up";
 
 
 //getting the correct data of the robot
-function read_robot_input(){
+function read_robot_input(file = "../data/data.json"){
 
   //get the json file and parse it
-  var file = "../data/data.json";
   fetch(file).then(function(resp){
     return resp.json();
   }).then(function(data){
-    
+    console.log(data);
     //Iterate trought object receive
     for (let i = 0; i < Object.keys(data).length; i++){
 
-      //if the lego isn't define
-      if (legos[i] == undefined){
+      //Split for the position
+      let char = data[i][0].split('');
+
+      //get the position of the current lego
+      let position = {
+        x : parseInt(char[5]+char[6]) - FloorWidth / 2,
+        y : -(parseInt(char[2]+char[3]) - FloorHeight / 2),
+        z : parseInt(data[i][2])
+      }
+
+      if (legos[i] == undefined || legos[i]["position"] != position){
         //Choose the color
         let color;
         switch(data[i][1]){
@@ -533,9 +540,6 @@ function read_robot_input(){
             break;
         }
         
-        //Split for the position
-        let char = data[i][0].split('');
-        
         //Type of the lego
         let type;
         if (i == Object.keys(data).length - 1){
@@ -546,49 +550,42 @@ function read_robot_input(){
           type = "other";
         }
         
-        if (i == 0){
-          type = "current";
+
+        if (legos[i] == undefined){
+          //Create an lego with the informations
+          var lego = {
+            type: type,
+          
+            position : position,
+          
+            color : color          
+          }
+
+                  
+          //add to the vector
+          legos.push(lego);
+        }else{
+          //update the top lego
+          legos[i]["type"] = type;
+          legos[i]["position"] = position;
+          legos[i]["color"] = color;
         }
         
-        //Create an lego with the informations
-        var lego = {
-          type: type,
-        
-          position : {
-            x : parseInt(char[5]+char[6]) - FloorWidth / 2,
-            y : -(parseInt(char[2]+char[3]) - FloorHeight / 2),
-            z : parseInt(data[i][2])
-          },
-        
-          color : color          
-        }
-        
-        //add to the vector
-        legos.set(lego);
+
+
+
+
+        //we add the lego
+        add_LEGO(legos[i]["color"], 
+        1, 
+        1, 
+        legos[i]["position"]["x"], 
+        legos[i]["position"]["y"], 
+        legos[i]["position"]["z"], 
+        scene, 
+        false, 
+        legos[i]["type"]);
       }
-
-      
-      // TODO POUR DEMAIN ESSAYE DE STOCKER ES VALEURS DANS UN TABLEAU DE LA FORME:
-      /*
-        1,0 : //x,y
-          0 : infos // z : infos
-          1 : infos
-        1,2 : 
-          0 : infos
-          1 : infos
-      */
-
-
-      //we add the lego
-      add_LEGO(legos[i]["color"], 
-              1, 
-              1, 
-              legos[i]["position"]["x"], 
-              legos[i]["position"]["y"], 
-              legos[i]["position"]["z"], 
-              scene, 
-              false, 
-              legos[i]["type"]);
     }
   })
 }
