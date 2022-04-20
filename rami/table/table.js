@@ -1,3 +1,5 @@
+var initiali
+
 function addLight(scene){
     const color = 0xFFFFFF;
     const intensity = 1;
@@ -95,10 +97,14 @@ function update_stud_levels_from_file(below_left, dim_x, dim_y) {
 
 }
 
-function add_LEGO(color, dim_x, dim_y, pos_x, pos_y, pos_z, scene, draggable, type, update_stud_levels = true ) {
+function add_LEGO(color, dim_x, dim_y, pos_x, pos_y, pos_z, scene, draggable, type, update_stud_levels = true, fromCube = false ) {
   x = computePlateLength(dim_x);
   z = computePlateLength(dim_y);
-  col = getColor(color);
+  if (typeof color === "string"){
+    col = getColor(color);
+  } else{
+    col = color;
+  }
   var geometry = new THREE.BoxGeometry(x,LEGO_HEIGHT,z);
 
   if (type != "current"){
@@ -113,9 +119,15 @@ function add_LEGO(color, dim_x, dim_y, pos_x, pos_y, pos_z, scene, draggable, ty
 
   }
   var cube = new THREE.Mesh(geometry,material);
-  cube.position.y = (0.5 + pos_z)*LEGO_HEIGHT + PLATE_HEIGHT;
-  cube.position.x = computePlateLength(pos_x) + x/2;
-  cube.position.z = -computePlateLength(pos_y) - z/2;
+  if (fromCube){
+    cube.position.y = pos_y;
+    cube.position.x = pos_x;
+    cube.position.z = pos_z; 
+  } else{
+    cube.position.y = (0.5 + pos_z)*LEGO_HEIGHT + PLATE_HEIGHT;
+    cube.position.x = computePlateLength(pos_x) + x/2;
+    cube.position.z = -computePlateLength(pos_y) - z/2; 
+  }
 
 
   cube.userData.name = dim_x + 'x' + dim_y + '_' + color;
@@ -441,7 +453,7 @@ function render_animate_selected() {
   addLight(scene);
 
 // this legos array contains the informations of the top legos in x,y coordinate
-var legos = new Array();
+var legos = new Map();
 
 
 
@@ -505,24 +517,25 @@ function read_robot_input(file = "../data/data.json"){
   fetch(file).then(function(resp){
     return resp.json();
   }).then(function(data){
-    console.log(data);
+
     //Iterate trought object receive
-    for (let i = 0; i < Object.keys(data).length; i++){
+    Object.keys(data).forEach(key =>{
 
       //Split for the position
-      let char = data[i][0].split('');
+      let char = key.split('');
 
       //get the position of the current lego
       let position = {
         x : parseInt(char[5]+char[6]) - FloorWidth / 2,
         y : -(parseInt(char[2]+char[3]) - FloorHeight / 2),
-        z : parseInt(data[i][2])
+        z : parseInt(data[key][1])
       }
 
-      if (legos[i] == undefined || legos[i]["position"] != position){
+      // 2 case if there is no legos or if there is one more legos in the x,y coords
+      if (legos.get(key) == undefined || JSON.stringify(legos.get(key)["position"]) != JSON.stringify(position)){
         //Choose the color
         let color;
-        switch(data[i][1]){
+        switch(data[key][0]){
           case 'b':
             color = "blue";
             break;
@@ -536,22 +549,16 @@ function read_robot_input(file = "../data/data.json"){
             color = "yellow";
             break;
           default:
-            color = "blue";
+            color = "black";
             break;
         }
         
-        //Type of the lego
+        //Type of the lego - basic is other
         let type;
-        if (i == Object.keys(data).length - 1){
-          type = "current";
-        } else if (i == Object.keys(data).length - 2){
-          type = "previous"
-        }else{
-          type = "other";
-        }
+        type = "other";
         
 
-        if (legos[i] == undefined){
+        if (legos.get(key) == undefined){
           //Create an lego with the informations
           var lego = {
             type: type,
@@ -563,35 +570,134 @@ function read_robot_input(file = "../data/data.json"){
 
                   
           //add to the vector
-          legos.push(lego);
+          legos.set(key, lego);
         }else{
           //update the top lego
-          legos[i]["type"] = type;
-          legos[i]["position"] = position;
-          legos[i]["color"] = color;
+          type = "current";
+          legos.get(key)["type"] = type;
+          legos.get(key)["position"] = position;
+          legos.get(key)["color"] = color;
+          updateLegos();
         }
-        
 
-
-
-
-        //we add the lego
-        add_LEGO(legos[i]["color"], 
+        //we add the lego to the scene
+        let tmp = add_LEGO(legos.get(key)["color"], 
         1, 
         1, 
-        legos[i]["position"]["x"], 
-        legos[i]["position"]["y"], 
-        legos[i]["position"]["z"], 
+        legos.get(key)["position"]["x"], 
+        legos.get(key)["position"]["y"], 
+        legos.get(key)["position"]["z"], 
         scene, 
         false, 
-        legos[i]["type"]);
+        legos.get(key)["type"]);
+
+        //current lego
+        if (legos.get(key)["type"] == "current"){
+          current = tmp;
+        } else if (legos.get(key)["type" == "previous"]){
+          previous = tmp;
+        }
       }
-    }
+    });
   })
 }
 
-//check if there is something under and if there not add something
-function checkUnder(lego){
+//this function has to change the current and the previous lego to the right ones
+function updateLegos(){
+  
+
+  //if there is a previous one 
+  if (previous != undefined){
+    let hexa = '#';
+
+    //get the info
+    let color = previous["material"]["color"];
+    color = colorNameFromTreeJSColors(color);
+    let x = previous["position"]["x"];
+    let y = previous["position"]["y"];
+    let z = previous["position"]["z"];
+  
+    //add the same lego but wit different type
+    add_LEGO(color,
+    1,
+    1,
+    x,
+    y,
+    z,
+    scene,
+    false,
+    "other",
+    false,
+    true);
+  
+    //remove the old one
+    remove_LEGO(previous);
+  }
+
+  //same as before but we define previous as the old current
+  if (current != undefined){
+    let color = current["material"]["color"];
+    
+
+    color = colorNameFromTreeJSColors(color);
+    x = current["position"]["x"];
+    y = current["position"]["y"];
+    z = current["position"]["z"];
+  
+    previous = add_LEGO(color,
+    1,
+    1,
+    x,
+    y,
+    z,
+    scene,
+    false,
+    "previous",
+    false,
+    true);
+  
+    remove_LEGO(current);
+  }
+
+
+
+
+}
+
+function colorNameFromTreeJSColors(color){
+  let hexa = '#';
+  if( color['r'] == 0){
+    hexa += '00';
+  } else{
+    let tmp = parseInt(255/color['r']);
+    if (tmp >= 255){
+      hexa += "FF";
+    } else{
+      hexa += tmp.toString(16);
+    }
+  }
+  if( color['g'] == 0){
+    hexa += '00';
+  } else{
+    let tmp = parseInt(255/color['g']);
+    if (tmp >= 255){
+      hexa += "FF";
+    } else{
+      hexa += tmp.toString(16);
+    }
+  }
+  if( color['b'] == 0){
+    hexa += '00';
+  } else{
+    let tmp = parseInt(255/color['b']);
+    if (tmp >= 255){
+      hexa += "FF";
+    } else{
+      hexa += tmp.toString(16);
+    }
+  }
+  let result = ntc.name(hexa);
+  return result[1].toLowerCase();
 }
 
 var myVar;
