@@ -847,7 +847,11 @@ function animate_up() {
 
 
     if (gripper.position.y >= gripper_OG.y){
+      
       cancelAnimationFrame( id );    
+
+      //remove the gripper
+      scene.remove(gripper);
 
       //remove the old current
       remove_LEGO(oldCurrent);
