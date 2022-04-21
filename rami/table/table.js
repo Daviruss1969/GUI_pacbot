@@ -455,62 +455,17 @@ function render_animate_selected() {
   // light
   addLight(scene);
 
-// this legos array contains the informations of the top legos in x,y coordinate
-var legos = new Map();
 
 
-
-  var isInStock = false;
-  var isInNav = false;
-
-  // stocks = ["stock_panel", "objects", "colors", "orientation", "representation"];
-  // navs = ["nav_panel", "rotate", "top", "bottom", "left", "right", "middle", "zoom_panel", "zoom_in", "zoom_out"];
-
-  // for (let elt in stocks){
-  //   document.getElementById(stocks[elt]).addEventListener("mouseenter", function(  ) {isInStock=true;});
-  //   document.getElementById(stocks[elt]).addEventListener("mouseout", function(  ) {isInStock=false;});
-  // }
-  
-  // for (let elt in navs){
-  //   document.getElementById(navs[elt]).addEventListener("mouseenter", function(  ) {isInNav=true;});
-  //   document.getElementById(navs[elt]).addEventListener("mouseout", function(  ) {isInNav=false;});
-  // }
-
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-
-
-// getting file scene
-const queryString = window.location.search;
-const urlParams = new URLSearchParams(queryString);
-var id = urlParams.get('scene')
-var section = urlParams.get('what')
 
 // special lego objs
-var oldCurrent;
-var current;
-var previous;
-var blink = "up";
+  // this legos array contains the informations of the top legos in x,y coordinate
+  var legos = new Map();
+  
+  var oldCurrent;
+  var current;
+  var previous;
+  var blink = "up";
 
 
 
