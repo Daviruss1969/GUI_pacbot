@@ -468,11 +468,11 @@ var blink = "up";
 /* 
   this function take an json in entrie, parse it and show on screen the data of the json in a specifical way to have better coherance.
 */
-function read_robot_input(file = "../data/data.json", animate = false) {
+function read_robot_input(file_data = "../data/data.json", file_choose = "../data/choose.json", animate = false) {
 
     let update = false;
     //get the json file and parse it
-    fetch(file).then(function(resp) {
+    fetch(file_data).then(function(resp) {
         return resp.json();
     }).then(function(data) {
 
@@ -491,45 +491,11 @@ function read_robot_input(file = "../data/data.json", animate = false) {
 
             // 2 case if there is no legos at x,y coords or if there is one more legos in the x,y coords
             if (legos.get(key) == undefined || JSON.stringify(legos.get(key)["position"]) != JSON.stringify(position)) {
-                //Choose the color
-                let color;
-                switch (data[key][0]) {
-                    case 'b':
-                        color = "blue";
-                        break;
-                    case 'g':
-                        color = "green";
-                        break;
-                    case 'r':
-                        color = "red";
-                        break;
-                    case 'y':
-                        color = "yellow";
-                        break;
-                    case 'o':
-                        color = "olive";
-                        break;
-                    case 'l':
-                        color = "light_green";
-                        break;
-                    default:
-                        color = "black";
-                        break;
-                }
+
+                color = getColorFromData(data[key][0]);
 
                 //Type of the lego, other - previous - current
-                let type;
-                if (animate) {
-                    //if there is more than one piece, it show only animation for the last one, TODO : se mettre d'accord avec belal sur la gestion de la prochaine piece du robot 
-                    if (update) {
-                        type = "other";
-                    } else { // sinon on update l'affichage
-                        update = true;
-                        type = "current";
-                    }
-                } else {
-                    type = "other";
-                }
+                let type = "other";
 
                 if (legos.get(key) == undefined) {
 
@@ -552,10 +518,10 @@ function read_robot_input(file = "../data/data.json", animate = false) {
                     legos.get(key)["color"] = color;
                 }
 
-                if (animate && update) {
+                /*if (animate && update) {
                     animate = false;
                     updateLegos();
-                }
+                }*/
 
                 //we add the lego to the scene
                 let tmp = add_LEGO(legos.get(key)["color"],
@@ -570,6 +536,77 @@ function read_robot_input(file = "../data/data.json", animate = false) {
             }
         });
     })
+
+
+
+
+    fetch(file_choose).then(function(resp) {
+        return resp.json();
+    }).then(function(data) {
+
+        goal = Object.keys(data)[1];
+        //get the place where the lego need to be
+        let char = goal.split('');
+
+        let position = {
+            x: parseInt(char[5] + char[6]) - FloorWidth / 2,
+            y: -(parseInt(char[2] + char[3]) - FloorHeight / 2),
+            z: parseInt(data[goal][1])
+        }
+
+        let color = getColorFromData(data[goal][0]);
+
+        let lego = {
+            type: "current",
+
+            position: position,
+
+            color: color
+        }
+
+        legos.set(goal, lego);
+
+        add_LEGO(legos.get(goal)["color"],
+            1,
+            1,
+            legos.get(goal)["position"]["x"],
+            legos.get(goal)["position"]["y"],
+            legos.get(goal)["position"]["z"],
+            scene,
+            false,
+            legos.get(goal)["type"]);
+
+    });
+}
+
+
+function getColorFromData(color_) {
+    //Choose the color
+    let color;
+    switch (color_) {
+        case 'b':
+            color = "blue";
+            break;
+        case 'g':
+            color = "green";
+            break;
+        case 'r':
+            color = "red";
+            break;
+        case 'y':
+            color = "yellow";
+            break;
+        case 'o':
+            color = "olive";
+            break;
+        case 'l':
+            color = "light_green";
+            break;
+        default:
+            color = "black";
+            break;
+    }
+    return color;
 }
 
 //this function has to change the current and the previous lego to the right ones
@@ -965,9 +1002,9 @@ camera.rotation.set(init_rot_x, init_rot_y, init_rot_z);
 var iterator = 2;
 //function for test
 function test() {
-    file = '../data/data' + iterator + ".json";
+    /*file = '../data/data' + iterator + ".json";
     read_robot_input(file, true);
     if (iterator < 11) {
         iterator++;
-    }
+    }*/
 }
