@@ -679,6 +679,7 @@ function colorNameFromTreeJSColors(color) {
     }
 }
 
+//variable for the blinking effect
 var myVar;
 
 //for the initialisation we run a first input
