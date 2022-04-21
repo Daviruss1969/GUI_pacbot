@@ -1006,7 +1006,7 @@ var iterator = 2;
 function test(){
   file = '../data/data'+iterator+".json";
   read_robot_input(file);
-  if (iterator < 4){
+  if (iterator < 10){
     iterator++;    
   } 
 }
