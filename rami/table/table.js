@@ -569,7 +569,7 @@ function read_robot_input(file = "../data/data.json", animate = false){
         //Type of the lego, other - previous - current
         let type;
         if (animate){
-          //if there is two piece, it show only animation for the last one, TODO : se mettre d'accord avec belal sur la gestion de la prochaine piece du robot 
+          //if there is more than one piece, it show only animation for the last one, TODO : se mettre d'accord avec belal sur la gestion de la prochaine piece du robot 
           if (update){
             type = "other";
           } else{ // sinon on update l'affichage
@@ -581,6 +581,7 @@ function read_robot_input(file = "../data/data.json", animate = false){
         }
 
         if (legos.get(key) == undefined){
+
           //Create an lego with the informations
           var lego = {
             type: type,
@@ -591,7 +592,7 @@ function read_robot_input(file = "../data/data.json", animate = false){
           }
 
                   
-          //add to the vector
+          //add to the map
           legos.set(key, lego);
         }else{
           //update the top lego
@@ -696,9 +697,6 @@ function updateLegos(){
 
 
 }
-//what i'm not sure :
-//the color will always work ?
-//the fact that I set something to false above will always work ?
 
 /* 
   this function take a color in entrie like this :
