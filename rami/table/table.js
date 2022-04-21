@@ -65,7 +65,8 @@ function getColor(val){
     blue:   0x003399,
     yellow: 0xe6e600,
     olive:  0x808000,
-    light_green: 0x90EE90
+    light_green: 0x90EE90,
+    grey: 0x808080
   }
   return codes[val];
 }
@@ -508,6 +509,7 @@ var id = urlParams.get('scene')
 var section = urlParams.get('what')
 
 // special lego objs
+var oldCurrent;
 var current;
 var previous;
 var blink = "up";
@@ -517,6 +519,7 @@ var blink = "up";
 //getting the correct data of the robot
 function read_robot_input(file = "../data/data.json"){
 
+  let update = false;
   //get the json file and parse it
   fetch(file).then(function(resp){
     return resp.json();
@@ -587,7 +590,15 @@ function read_robot_input(file = "../data/data.json"){
           legos.get(key)["type"] = type;
           legos.get(key)["position"] = position;
           legos.get(key)["color"] = color;
-          updateLegos();
+
+          //if there is two piece, it show only animation for the last one, TODO : se mettre d'accord avec belal sur la gestion de la prochaine piece du robot 
+          if (update){
+            type = "other";
+          } else{ // sinon on update l'affichage
+            update = true;
+            updateLegos();
+          }
+          
         }
 
         //we add the lego to the scene
@@ -600,13 +611,6 @@ function read_robot_input(file = "../data/data.json"){
         scene, 
         false, 
         legos.get(key)["type"]);
-
-        //current lego
-        if (legos.get(key)["type"] == "current"){
-          current = tmp;
-        } else if (legos.get(key)["type" == "previous"]){
-          previous = tmp;
-        }
       }
     });
   })
@@ -614,10 +618,10 @@ function read_robot_input(file = "../data/data.json"){
 
 //this function has to change the current and the previous lego to the right ones
 function updateLegos(){
-  
 
   //if there is a previous one 
   if (previous != undefined){
+
     //get the name of the color with the function
     let color = previous["material"]["color"];
     color = colorNameFromTreeJSColors(color);
@@ -642,17 +646,21 @@ function updateLegos(){
   
     //remove the old one
     remove_LEGO(previous);
+
   }
 
-  //same as before but we define previous as the old current
+  //if we have a current lego
   if (current != undefined){
-    let color = current["material"]["color"];
+    //we take the old current and all of the information
+    oldCurrent = current;
+    let color = oldCurrent["material"]["color"];
+
     
 
     color = colorNameFromTreeJSColors(color);
-    x = current["position"]["x"];
-    y = current["position"]["y"];
-    z = current["position"]["z"];
+    x = oldCurrent["position"]["x"];
+    y = oldCurrent["position"]["y"];
+    z = oldCurrent["position"]["z"];
   
     previous = add_LEGO(color,
     1,
@@ -665,8 +673,19 @@ function updateLegos(){
     "previous",
     false,
     true);
-  
-    remove_LEGO(current);
+
+    //we make it transparent
+    oldCurrent.material.transparent = true;
+    oldCurrent.material.opacity =  0.5;
+
+    //run the animation for the grip, when the grip as finished
+    //we destroy the old current lego and call the read robot input funtion in order
+    //to actualize the legos
+    gripPrevious();
+  }else{
+    //here we actualize the lego if there is no animation to run
+    //for now it's testing time but then I have just to call read_robot_input();
+    test();
   }
 
 
@@ -708,11 +727,17 @@ function colorNameFromTreeJSColors(color){
 }
 
 var myVar;
-var update;
 
+//for the initialisation we run a first input
 read_robot_input();
+
+//for testing I need a little delay who can be remove when this is finish
+setTimeout(function(){
+  test();
+}, 3000)
+
+
 render_animate_selected(); 
-//add_objects(1,2,3); //TODO to implemente the arm, uncomment this ligne and ligne 699 to 711
 
   var dir = new THREE.Vector3();
   var sph = new THREE.Spherical();
@@ -787,6 +812,15 @@ function add_gripper(color, pos, orientation, scene) {
 }
 
 
+
+// POUR LE GRIP 
+var prev_OG;
+var grip;
+var gripper_OG;
+var speed = 1.7;
+var distance_beg = 13;
+
+
 function animate_down() {
 
     id = requestAnimationFrame( animate_down );
@@ -800,8 +834,8 @@ function animate_down() {
       animate_up();
     }
     else{
-      previous.position.y -= prev_OG.y/2;
-      gripper.position.y -= prev_OG.y/2;
+      previous.position.y -= prev_OG.y/speed;
+      gripper.position.y -= prev_OG.y/speed;
     }
 
 }
@@ -813,27 +847,37 @@ function animate_up() {
 
 
     if (gripper.position.y >= gripper_OG.y){
-      cancelAnimationFrame( id );
+      cancelAnimationFrame( id );    
+
+      //remove the old current
+      remove_LEGO(oldCurrent);
+
+      //actualize legos
+      test(); //for now it's testing time but then I have just to call read_robot_input();
     }
     else{
-      gripper.position.y += prev_OG.y/2;
+      gripper.position.y += prev_OG.y/speed;
     }
 
 }
 
-/*var prev_OG = Object();
-Object.assign(prev_OG, previous.position);
+function gripPrevious(){
 
-var gripper = add_gripper("grey", prev_OG, "horizontal", scene);
-
-
-previous.position.y *= 25;
-gripper.position.y += (previous.position.y - prev_OG.y);
-
-var gripper_OG = Object();
-Object.assign(gripper_OG, gripper.position);
-
-animate_down();*/
+  //get the position of the previous lego
+  prev_OG = Object();
+  Object.assign(prev_OG, previous.position);
+  
+  //add a gripper at the right place
+  gripper = add_gripper("grey", prev_OG, "horizontal", scene);
+  
+  
+  previous.position.y *= distance_beg;
+  gripper.position.y += (previous.position.y - prev_OG.y);
+  
+  gripper_OG = Object();
+  Object.assign(gripper_OG, gripper.position);
+  animate_down();
+}
 
 // 
 // 
@@ -866,8 +910,6 @@ animate_down();*/
   var draggable = null;
 
   var holding = false;
-
-  // console.log(table_studs);
 
   function toScreenPosition(obj, camera)
     {
@@ -1240,3 +1282,16 @@ animate_down();*/
 
 camera.position.set(init_pos_x, init_pos_y, init_pos_z);
 camera.rotation.set(init_rot_x, init_rot_y, init_rot_z);
+
+
+
+
+var iterator = 2;
+//function for test
+function test(){
+  file = '../data/data'+iterator+".json";
+  read_robot_input(file);
+  if (iterator < 4){
+    iterator++;    
+  } 
+}
