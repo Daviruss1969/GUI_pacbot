@@ -1,2 +1,2 @@
 # GUI_pacbot
-Graphical user inteferface for the pacbot project
+Graphical User Inteferface for the pacbot project

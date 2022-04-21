@@ -516,7 +516,9 @@ var blink = "up";
 
 
 
-//getting the correct data of the robot
+/* 
+  this function take an json in entrie, parse it and show on screen the data of the json in a specifical way to have better coherance.
+*/
 function read_robot_input(file = "../data/data.json"){
 
   let update = false;
@@ -752,8 +754,10 @@ render_animate_selected();
 var id;
 
 
+//add a gripper to the screen at the correct position
 function add_gripper(color, pos, orientation, scene) {
 
+  //get color of the gripper
   col = getColor(color);
 
   pole_height = LEGO_HEIGHT*30;
@@ -813,7 +817,7 @@ function add_gripper(color, pos, orientation, scene) {
 
 
 
-// POUR LE GRIP 
+// Variables for the gripper animation 
 var prev_OG;
 var grip;
 var gripper_OG;
@@ -821,19 +825,23 @@ var speed = 1.7;
 var distance_beg = 13;
 
 
+//when the gripper goes down
 function animate_down() {
 
+    //we get the number of the actual animation frame
     id = requestAnimationFrame( animate_down );
 
+    //show it on screen
     renderer.render( scene, camera );
 
-
+    //If it's finish
     if (previous.position.y <= prev_OG.y){
       previous.position.y = prev_OG.y;
       cancelAnimationFrame( id );
       animate_up();
     }
     else{
+      //update position for next frame
       previous.position.y -= prev_OG.y/speed;
       gripper.position.y -= prev_OG.y/speed;
     }
@@ -874,10 +882,11 @@ function gripPrevious(){
   //add a gripper at the right place
   gripper = add_gripper("grey", prev_OG, "horizontal", scene);
   
-  
+  //where the gripper will start
   previous.position.y *= distance_beg;
   gripper.position.y += (previous.position.y - prev_OG.y);
   
+  //create the gripper and run animation
   gripper_OG = Object();
   Object.assign(gripper_OG, gripper.position);
   animate_down();
@@ -966,6 +975,8 @@ function gripPrevious(){
     }
   });
 
+
+  //move with arrow keys
   document.addEventListener("keydown", function(event){
     let dX = 0;
     let dZ = 0;
