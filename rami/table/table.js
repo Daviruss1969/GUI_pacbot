@@ -1,5 +1,3 @@
-var initiali
-
 function addLight(scene){
     const color = 0xFFFFFF;
     const intensity = 1;
@@ -519,7 +517,7 @@ var blink = "up";
 /* 
   this function take an json in entrie, parse it and show on screen the data of the json in a specifical way to have better coherance.
 */
-function read_robot_input(file = "../data/data.json"){
+function read_robot_input(file = "../data/data.json", animate = false){
 
   let update = false;
   //get the json file and parse it
@@ -568,10 +566,19 @@ function read_robot_input(file = "../data/data.json"){
             break;
         }
         
-        //Type of the lego - basic is other
+        //Type of the lego, other - previous - current
         let type;
-        type = "other";
-        
+        if (animate){
+          //if there is two piece, it show only animation for the last one, TODO : se mettre d'accord avec belal sur la gestion de la prochaine piece du robot 
+          if (update){
+            type = "other";
+          } else{ // sinon on update l'affichage
+            update = true;
+            type = "current";
+          }
+        }else{
+          type = "other";
+        }
 
         if (legos.get(key) == undefined){
           //Create an lego with the informations
@@ -588,19 +595,14 @@ function read_robot_input(file = "../data/data.json"){
           legos.set(key, lego);
         }else{
           //update the top lego
-          type = "current";
           legos.get(key)["type"] = type;
           legos.get(key)["position"] = position;
           legos.get(key)["color"] = color;
+        }
 
-          //if there is two piece, it show only animation for the last one, TODO : se mettre d'accord avec belal sur la gestion de la prochaine piece du robot 
-          if (update){
-            type = "other";
-          } else{ // sinon on update l'affichage
-            update = true;
-            updateLegos();
-          }
-          
+        if (animate && update){
+          animate = false;
+          updateLegos();
         }
 
         //we add the lego to the scene
@@ -707,7 +709,7 @@ function updateLegos(){
 */
 function colorNameFromTreeJSColors(color){
 
-  //get the colors string defined clearely:
+  //get the colors string defined clearly:
   let calc = color["r"].toFixed(3).toString()+'-'+color["g"].toFixed(3).toString()+'-'+color["b"].toFixed(3).toString();
 
   //test the combinaison
@@ -1016,8 +1018,8 @@ var iterator = 2;
 //function for test
 function test(){
   file = '../data/data'+iterator+".json";
-  read_robot_input(file);
-  if (iterator < 10){
+  read_robot_input(file, true);
+  if (iterator < 11){
     iterator++;    
   } 
 }
