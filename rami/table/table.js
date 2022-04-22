@@ -394,7 +394,7 @@ function render_animate_selected() {
 // 
 // 
 // 
-// 
+//
 // 
 // 
 // 
@@ -564,6 +564,8 @@ function updateChoose(file_choose) {
 
                 //play the animation and delete it (inside the function)
                 throwLego(lego_goal);
+            } else {
+                update();
             }
             //update
             oldCurrent = goal;
@@ -604,6 +606,8 @@ function updateChoose(file_choose) {
             //take the lego who need to be move and animate it;
             let obj_lego = scene.getObjectByName(lego_move);
             gripLego(obj_lego);
+        } else {
+            test();
         }
     });
 }
@@ -791,10 +795,12 @@ function animate_up_g() {
 
         //remove the old current
         remove_LEGO(lego_move);
+        update();
     } else {
         grip_g.position.y += speed_g;
         lego_move.position.y += speed_g;
     }
+
 
 }
 
@@ -871,14 +877,22 @@ function animate_up_t() {
 
         //remove the old current
         scene.remove(lego_goal);
-
+        update();
     } else {
         grip_t.position.y += prev_OG.y / speed_t;
     }
 
 }
 
+var nb = 0;
 
+function update() {
+    nb++;
+    if (nb == 2) {
+        test();
+        nb = 0;
+    }
+}
 // start navigation orbit
 
 document.getElementById("top").addEventListener("click", function() {
@@ -997,12 +1011,16 @@ camera.position.set(init_pos_x, init_pos_y, init_pos_z);
 camera.rotation.set(init_rot_x, init_rot_y, init_rot_z);
 
 
-setTimeout(function() {
-    console.log("data2");
-    read_robot_input("../data/data2.json", "../data/choose2.json");
-}, 8000)
 
-setTimeout(function() {
-    console.log("data3");
-    read_robot_input("../data/data3.json", "../data/choose3.json");
-}, 16000)
+
+//just for testing
+var iterator = 2;
+
+function test() {
+    file = "../data/data" + iterator + ".json";
+    file2 = "../data/choose" + iterator + ".json";
+    read_robot_input(file, file2);
+    if (iterator < 3) {
+        iterator++;
+    }
+}
