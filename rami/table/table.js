@@ -491,15 +491,16 @@ function read_robot_input(file_data = "../data/data.json", file_choose = "../dat
                 z: parseInt(data[key][1])
             }
 
-            //Type of the lego, other - previous - current
+            //Type of the lego, other - previous - current, if the key is the one who be place, we set the type to previous
             let type = "other";
             if (key == oldCurrent) {
                 type = "previous";
             }
 
-            // 2 case if there is no legos at x,y coords or if there is one more legos in the x,y coords
+            //if there is no legos at x,y coords or if there is one more legos in the x,y coords or if it's not the same type we add an lego or change the current one
             if (legos.get(key) == undefined || JSON.stringify(legos.get(key)["position"]) != JSON.stringify(position) || legos.get(key)["type"] != type) {
 
+                //color
                 color = getColorFromData(data[key][0]);
 
 
@@ -529,9 +530,13 @@ function read_robot_input(file_data = "../data/data.json", file_choose = "../dat
                     key);
             }
         });
+
+        //update the lego and the goal who will be choose by the robot
         updateChoose(file_choose);
     })
 }
+
+var lego_g;
 
 function updateChoose(file_choose) {
     fetch(file_choose).then(function(resp) {
@@ -544,8 +549,25 @@ function updateChoose(file_choose) {
         //where the lego need to be, (don't exist)
         goal = Object.keys(data)[1];
 
+        //if the old current one is different than the goal we have to change things
         if (oldCurrent != goal) {
+
+            //if there is a current lego, play the place animation on it
+            if (oldCurrent != -1) {
+                //get the place where the lego will drop
+                let lego_goal = lego_g;
+
+                //make it transparent
+                lego_goal.material.transparent = true;
+                lego_goal.material.opacity = 0.5;
+
+                //play the animation and delete it (inside the function)
+                throwLego(lego_goal);
+            }
+            //update
             oldCurrent = goal;
+
+
             //set the position blinking
             let char = goal.split('');
 
@@ -565,9 +587,7 @@ function updateChoose(file_choose) {
                 color: color
             }
 
-            //legos.set(goal, lego);
-
-            add_LEGO(lego["color"],
+            lego_g = add_LEGO(lego["color"],
                 1,
                 1,
                 lego["position"]["x"],
@@ -578,14 +598,10 @@ function updateChoose(file_choose) {
                 lego["type"],
                 goal);
 
-            //TODO -------
-            //take the lego who need to be move;
+
+            //take the lego who need to be move and animate it;
             let obj_lego = scene.getObjectByName(lego_move);
             gripLego(obj_lego);
-            /*setTimeout(function() {
-                let obj_lego = scene.getObjectByName(lego_move);
-                gripLego(obj_lego);
-            }, 300);*/
         }
     });
 }
@@ -618,115 +634,6 @@ function getColorFromData(color_) {
             break;
     }
     return color;
-}
-
-//this function has to change the current and the previous lego to the right ones
-function updateLegos() {
-
-    //if there is a previous one 
-    if (previous != undefined) {
-
-        //get the name of the color with the function
-        let color = previous["material"]["color"];
-        color = colorNameFromTreeJSColors(color);
-
-        //get position
-        let x = previous["position"]["x"];
-        let y = previous["position"]["y"];
-        let z = previous["position"]["z"];
-
-        //add the same lego but wit different type
-        add_LEGO(color,
-            1,
-            1,
-            x,
-            y,
-            z,
-            scene,
-            false,
-            "other",
-            false,
-            true);
-
-        //remove the old one
-        remove_LEGO(previous);
-
-
-
-    }
-
-    //if we have a current lego
-    if (current != undefined) {
-        //we take the old current and all of the information
-        oldCurrent = current;
-        let color = oldCurrent["material"]["color"];
-
-
-
-        color = colorNameFromTreeJSColors(color);
-        x = oldCurrent["position"]["x"];
-        y = oldCurrent["position"]["y"];
-        z = oldCurrent["position"]["z"];
-
-        previous = add_LEGO(color,
-            1,
-            1,
-            x,
-            y,
-            z,
-            scene,
-            false,
-            "previous",
-            false,
-            true);
-
-        //we make it transparent
-        oldCurrent.material.transparent = true;
-        oldCurrent.material.opacity = 0.5;
-
-        //run the animation for the grip, when the grip as finished
-        //we destroy the old current lego and call the read robot input funtion in order
-        //to actualize the legos
-        gripPrevious();
-    } else {
-        //here we actualize the lego if there is no animation to run
-        //for now it's testing time but then I have just to call read_robot_input();
-        test();
-    }
-
-
-
-
-}
-
-/* 
-  this function take a color in entrie like this :
-    R : 0.9
-    G : 0
-    B : 0.7364
-  and check the correspondance to return the good color name
-*/
-function colorNameFromTreeJSColors(color) {
-
-    //get the colors string defined clearly:
-    let calc = color["r"].toFixed(3).toString() + '-' + color["g"].toFixed(3).toString() + '-' + color["b"].toFixed(3).toString();
-
-    //test the combinaison
-    if (calc == "0.502-0.502-0.000") { //olive
-        return "olive";
-    } else if (calc == "0.820-0.000-0.000") { //red
-        return "red";
-    } else if (calc == "0.902-0.902-0.000") { //yellow
-        return "yellow";
-    } else if (calc == "0.000-0.702-0.000") { // green
-        return "green";
-    } else if (calc == "0.000-0.200-0.600") { //blue
-        return "blue";
-    } else if (calc == "0.565-0.933-0.565") { //light green
-        return "light_green";
-    } else { //others
-        return "black";
-    }
 }
 
 //variable for the blinking effect
@@ -826,74 +733,149 @@ function add_gripper(color, pos, orientation, scene) {
 //
 //
 //ANIMATION OF THE GRIP
-
+/* there will be 2 type of the gripper animation, the grip one and the throw one
+for all the situation, there is differents things to do , so differents function
+*/
 
 // Variables for the gripper animation 
+//grip animation :
 var lego_move;
 var lego_move_position;
-var grip;
-var gripper_OG;
-var speed = 1.7;
+var grip_g;
+var gripper_OG_g;
+var speed_g;
+
+//general
 var distance_beg = 18;
 
+//throw animation
+var lego_goal;
+var grip_t;
+var gripper_OG_t;
+var speed_t = 1.5;
 
 //when the gripper goes down
-function animate_down() {
+function animate_down_g() {
 
     //we get the number of the actual animation frame
-    id = requestAnimationFrame(animate_down);
+    id = requestAnimationFrame(animate_down_g);
 
     //show it on screen
     renderer.render(scene, camera);
 
     //if the head of the gripper is in contact with the lego
-    if (gripper.position.y - gripper.geometry.parameters.height / 2 <= lego_move.position.y + lego_move.geometry.parameters.height / 2) {
+    if (grip_g.position.y - grip_g.geometry.parameters.height / 2 <= lego_move.position.y + lego_move.geometry.parameters.height / 2) {
         cancelAnimationFrame(id);
-        animate_up();
+        animate_up_g();
     } else {
         //update position for next frame
-        gripper.position.y -= speed;
+        grip_g.position.y -= speed_g;
     }
 
 }
 
-function animate_up() {
-    id = requestAnimationFrame(animate_up);
+function animate_up_g() {
+    id = requestAnimationFrame(animate_up_g);
 
     renderer.render(scene, camera);
 
-
-    if (gripper.position.y >= gripper_OG.y) {
+    //if the gripper came back to his previous position
+    if (grip_g.position.y >= gripper_OG_g.y) {
 
         cancelAnimationFrame(id);
 
         //remove the gripper
-        scene.remove(gripper);
+        scene.remove(grip_g);
 
         //remove the old current
         remove_LEGO(lego_move);
     } else {
-        gripper.position.y += speed;
-        lego_move.position.y += speed;
+        grip_g.position.y += speed_g;
+        lego_move.position.y += speed_g;
     }
 
 }
 
 function gripLego(lego) {
     lego_move = lego;
-    speed = lego_move.position.y / 1; // 1.7 is a value who can be changed for more or less speed
+    speed_g = lego_move.position.y; // 1.7 is a value who can be changed for more or less speed
 
     //add a gripper at the right place
-    gripper = add_gripper("grey", lego_move.position, "horizontal", scene);
+    grip_g = add_gripper("grey", lego_move.position, "horizontal", scene);
 
     //where the gripper will start
-    gripper.position.y += ((lego_move.position.y * distance_beg) - lego_move.position.y);
+    grip_g.position.y += ((lego_move.position.y * distance_beg) - lego_move.position.y);
 
     //create the gripper and run animation
-    gripper_OG = Object();
-    Object.assign(gripper_OG, gripper.position);
-    animate_down();
+    gripper_OG_g = Object();
+    Object.assign(gripper_OG_g, grip_g.position);
+    animate_down_g();
 }
+
+
+function throwLego(lego) {
+    lego_goal = lego;
+    //get the position of the previous lego
+    prev_OG = Object();
+    Object.assign(prev_OG, previous.position);
+
+    //add a gripper at the right place
+    grip_t = add_gripper("grey", prev_OG, "horizontal", scene);
+
+    //where the gripper will start
+    previous.position.y *= distance_beg;
+    grip_t.position.y += (previous.position.y - prev_OG.y);
+
+    //create the gripper and run animation
+    gripper_OG_t = Object();
+    Object.assign(gripper_OG_t, grip_t.position);
+    animate_down_t();
+}
+
+//when the gripper goes down
+function animate_down_t() {
+
+    //we get the number of the actual animation frame
+    id = requestAnimationFrame(animate_down_t);
+
+    //show it on screen
+    renderer.render(scene, camera);
+
+    //If it's finish
+    if (previous.position.y <= prev_OG.y) {
+        previous.position.y = prev_OG.y;
+        cancelAnimationFrame(id);
+        animate_up_t();
+    } else {
+        //update position for next frame
+        previous.position.y -= prev_OG.y / speed_t;
+        grip_t.position.y -= prev_OG.y / speed_t;
+    }
+
+}
+
+function animate_up_t() {
+    id = requestAnimationFrame(animate_up_t);
+
+    renderer.render(scene, camera);
+
+
+    if (grip_t.position.y >= gripper_OG_t.y) {
+
+        cancelAnimationFrame(id);
+
+        //remove the gripper
+        scene.remove(grip_t);
+
+        //remove the old current
+        scene.remove(lego_goal);
+
+    } else {
+        grip_t.position.y += prev_OG.y / speed_t;
+    }
+
+}
+
 
 // start navigation orbit
 
