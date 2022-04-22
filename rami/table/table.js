@@ -417,14 +417,14 @@ var STUD_HEIGHT = 1.7;
 var STUD_PADDING = STUD_WIDTH / 3.2; // table sides
 var STUD_NUM_SIDES = 32;
 var LEGO_HEIGHT = 9.6;
-var FloorWidth = 48;
-var FloorHeight = 24;
+var FloorWidth = 23;
+var FloorHeight = 14;
 
 // table positions
-var MIN_X = -computePlateLength(24);
-var MIN_Y = -computePlateLength(12);
-var MAX_X = computePlateLength(24);
-var MAX_Y = computePlateLength(12);
+var MIN_X = -computePlateLength(FloorWidth / 2);
+var MIN_Y = -computePlateLength(FloorHeight / 2);
+var MAX_X = computePlateLength(FloorWidth / 2);
+var MAX_Y = computePlateLength(FloorHeight / 2);
 
 var objects = [];
 
@@ -527,7 +527,8 @@ function read_robot_input(file_data = "../data/data.json", file_choose = "../dat
                     scene,
                     false,
                     legos.get(key)["type"],
-                    key);
+                    key,
+                    false);
             }
         });
 
@@ -596,7 +597,8 @@ function updateChoose(file_choose) {
                 scene,
                 false,
                 lego["type"],
-                goal);
+                goal,
+                false);
 
 
             //take the lego who need to be move and animate it;
@@ -999,3 +1001,8 @@ setTimeout(function() {
     console.log("data2");
     read_robot_input("../data/data2.json", "../data/choose2.json");
 }, 8000)
+
+setTimeout(function() {
+    console.log("data3");
+    read_robot_input("../data/data3.json", "../data/choose3.json");
+}, 16000)
