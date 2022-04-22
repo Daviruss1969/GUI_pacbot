@@ -100,7 +100,7 @@ function update_stud_levels_from_file(below_left, dim_x, dim_y) {
 
 }
 
-function add_LEGO(color, dim_x, dim_y, pos_x, pos_y, pos_z, scene, draggable, type, update_stud_levels = true, fromCube = false) {
+function add_LEGO(color, dim_x, dim_y, pos_x, pos_y, pos_z, scene, draggable, type, name = "", update_stud_levels = true, fromCube = false) {
     x = computePlateLength(dim_x);
     z = computePlateLength(dim_y);
     if (typeof color === "string") {
@@ -108,6 +108,7 @@ function add_LEGO(color, dim_x, dim_y, pos_x, pos_y, pos_z, scene, draggable, ty
     } else {
         col = color;
     }
+
     var geometry = new THREE.BoxGeometry(x, LEGO_HEIGHT, z);
 
     if (type != "current") {
@@ -121,6 +122,7 @@ function add_LEGO(color, dim_x, dim_y, pos_x, pos_y, pos_z, scene, draggable, ty
 
     }
     var cube = new THREE.Mesh(geometry, material);
+    cube.name = name;
     if (fromCube) {
         cube.position.y = pos_y;
         cube.position.x = pos_x;
@@ -458,7 +460,7 @@ addLight(scene);
 // this legos array contains the informations of the top legos in x,y coordinate
 var legos = new Map();
 
-var oldCurrent;
+var oldCurrent = -1;
 var current;
 var previous;
 var blink = "up";
@@ -489,39 +491,30 @@ function read_robot_input(file_data = "../data/data.json", file_choose = "../dat
                 z: parseInt(data[key][1])
             }
 
+            //Type of the lego, other - previous - current
+            let type = "other";
+            if (key == oldCurrent) {
+                type = "previous";
+            }
+
             // 2 case if there is no legos at x,y coords or if there is one more legos in the x,y coords
-            if (legos.get(key) == undefined || JSON.stringify(legos.get(key)["position"]) != JSON.stringify(position)) {
+            if (legos.get(key) == undefined || JSON.stringify(legos.get(key)["position"]) != JSON.stringify(position) || legos.get(key)["type"] != type) {
 
                 color = getColorFromData(data[key][0]);
 
-                //Type of the lego, other - previous - current
-                let type = "other";
 
-                if (legos.get(key) == undefined) {
+                //Create an lego with the informations
+                var lego = {
+                    type: type,
 
-                    //Create an lego with the informations
-                    var lego = {
-                        type: type,
+                    position: position,
 
-                        position: position,
-
-                        color: color
-                    }
-
-
-                    //add to the map
-                    legos.set(key, lego);
-                } else {
-                    //update the top lego
-                    legos.get(key)["type"] = type;
-                    legos.get(key)["position"] = position;
-                    legos.get(key)["color"] = color;
+                    color: color
                 }
 
-                /*if (animate && update) {
-                    animate = false;
-                    updateLegos();
-                }*/
+
+                //add to the map
+                legos.set(key, lego);
 
                 //we add the lego to the scene
                 let tmp = add_LEGO(legos.get(key)["color"],
@@ -532,50 +525,68 @@ function read_robot_input(file_data = "../data/data.json", file_choose = "../dat
                     legos.get(key)["position"]["z"],
                     scene,
                     false,
-                    legos.get(key)["type"]);
+                    legos.get(key)["type"],
+                    key);
             }
         });
+        updateChoose(file_choose);
     })
+}
 
-
-
-
+function updateChoose(file_choose) {
     fetch(file_choose).then(function(resp) {
         return resp.json();
     }).then(function(data) {
 
+        //the lego who will be move (have to exist)
+        lego_move = Object.keys(data)[0]
+
+        //where the lego need to be, (don't exist)
         goal = Object.keys(data)[1];
-        //get the place where the lego need to be
-        let char = goal.split('');
 
-        let position = {
-            x: parseInt(char[5] + char[6]) - FloorWidth / 2,
-            y: -(parseInt(char[2] + char[3]) - FloorHeight / 2),
-            z: parseInt(data[goal][1])
+        if (oldCurrent != goal) {
+            oldCurrent = goal;
+            //set the position blinking
+            let char = goal.split('');
+
+            let position = {
+                x: parseInt(char[5] + char[6]) - FloorWidth / 2,
+                y: -(parseInt(char[2] + char[3]) - FloorHeight / 2),
+                z: parseInt(data[goal][1])
+            }
+
+            let color = getColorFromData(data[goal][0]);
+
+            let lego = {
+                type: "current",
+
+                position: position,
+
+                color: color
+            }
+
+            //legos.set(goal, lego);
+
+            add_LEGO(lego["color"],
+                1,
+                1,
+                lego["position"]["x"],
+                lego["position"]["y"],
+                lego["position"]["z"],
+                scene,
+                false,
+                lego["type"],
+                goal);
+
+            //TODO -------
+            //take the lego who need to be move;
+            let obj_lego = scene.getObjectByName(lego_move);
+            gripLego(obj_lego);
+            /*setTimeout(function() {
+                let obj_lego = scene.getObjectByName(lego_move);
+                gripLego(obj_lego);
+            }, 300);*/
         }
-
-        let color = getColorFromData(data[goal][0]);
-
-        let lego = {
-            type: "current",
-
-            position: position,
-
-            color: color
-        }
-
-        legos.set(goal, lego);
-
-        add_LEGO(legos.get(goal)["color"],
-            1,
-            1,
-            legos.get(goal)["position"]["x"],
-            legos.get(goal)["position"]["y"],
-            legos.get(goal)["position"]["z"],
-            scene,
-            false,
-            legos.get(goal)["type"]);
-
     });
 }
 
@@ -639,6 +650,8 @@ function updateLegos() {
 
         //remove the old one
         remove_LEGO(previous);
+
+
 
     }
 
@@ -722,11 +735,6 @@ var myVar;
 //for the initialisation we run a first input
 read_robot_input();
 
-//for testing I need a little delay who can be remove when this is finish
-setTimeout(function() {
-    test();
-}, 3000)
-
 
 render_animate_selected();
 
@@ -804,14 +812,29 @@ function add_gripper(color, pos, orientation, scene) {
     return pole;
 }
 
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//ANIMATION OF THE GRIP
 
 
 // Variables for the gripper animation 
-var prev_OG;
+var lego_move;
+var lego_move_position;
 var grip;
 var gripper_OG;
 var speed = 1.7;
-var distance_beg = 13;
+var distance_beg = 18;
 
 
 //when the gripper goes down
@@ -823,15 +846,13 @@ function animate_down() {
     //show it on screen
     renderer.render(scene, camera);
 
-    //If it's finish
-    if (previous.position.y <= prev_OG.y) {
-        previous.position.y = prev_OG.y;
+    //if the head of the gripper is in contact with the lego
+    if (gripper.position.y - gripper.geometry.parameters.height / 2 <= lego_move.position.y + lego_move.geometry.parameters.height / 2) {
         cancelAnimationFrame(id);
         animate_up();
     } else {
         //update position for next frame
-        previous.position.y -= prev_OG.y / speed;
-        gripper.position.y -= prev_OG.y / speed;
+        gripper.position.y -= speed;
     }
 
 }
@@ -850,28 +871,23 @@ function animate_up() {
         scene.remove(gripper);
 
         //remove the old current
-        remove_LEGO(oldCurrent);
-
-        //actualize legos
-        test(); //for now it's testing time but then I have just to call read_robot_input();
+        remove_LEGO(lego_move);
     } else {
-        gripper.position.y += prev_OG.y / speed;
+        gripper.position.y += speed;
+        lego_move.position.y += speed;
     }
 
 }
 
-function gripPrevious() {
-
-    //get the position of the previous lego
-    prev_OG = Object();
-    Object.assign(prev_OG, previous.position);
+function gripLego(lego) {
+    lego_move = lego;
+    speed = lego_move.position.y / 1; // 1.7 is a value who can be changed for more or less speed
 
     //add a gripper at the right place
-    gripper = add_gripper("grey", prev_OG, "horizontal", scene);
+    gripper = add_gripper("grey", lego_move.position, "horizontal", scene);
 
     //where the gripper will start
-    previous.position.y *= distance_beg;
-    gripper.position.y += (previous.position.y - prev_OG.y);
+    gripper.position.y += ((lego_move.position.y * distance_beg) - lego_move.position.y);
 
     //create the gripper and run animation
     gripper_OG = Object();
@@ -997,14 +1013,7 @@ camera.position.set(init_pos_x, init_pos_y, init_pos_z);
 camera.rotation.set(init_rot_x, init_rot_y, init_rot_z);
 
 
-
-
-var iterator = 2;
-//function for test
-function test() {
-    /*file = '../data/data' + iterator + ".json";
-    read_robot_input(file, true);
-    if (iterator < 11) {
-        iterator++;
-    }*/
-}
+setTimeout(function() {
+    console.log("data2");
+    read_robot_input("../data/data2.json", "../data/choose2.json");
+}, 8000)
