@@ -493,9 +493,6 @@ function read_robot_input(file_data = "../data/data.json", file_choose = "../dat
 
             //Type of the lego, other - previous - current, if the key is the one who be place, we set the type to previous
             let type = "other";
-            if (key == oldCurrent) {
-                type = "previous";
-            }
 
             //if there is no legos at x,y coords or if there is one more legos in the x,y coords or if it's not the same type we add an lego or change the current one
             if (legos.get(key) == undefined || JSON.stringify(legos.get(key)["position"]) != JSON.stringify(position) || legos.get(key)["type"] != type) {
@@ -529,6 +526,9 @@ function read_robot_input(file_data = "../data/data.json", file_choose = "../dat
                     legos.get(key)["type"],
                     key,
                     false);
+                if (key == oldCurrent) {
+                    lego_down = tmp;
+                }
             }
         });
 
@@ -538,6 +538,8 @@ function read_robot_input(file_data = "../data/data.json", file_choose = "../dat
 }
 
 var lego_g;
+var lego_down;
+var LEGO_move;
 
 function updateChoose(file_choose) {
     fetch(file_choose).then(function(resp) {
@@ -545,13 +547,15 @@ function updateChoose(file_choose) {
     }).then(function(data) {
 
         //the lego who will be move (have to exist)
-        lego_move = Object.keys(data)[0]
+        move = Object.keys(data)[0]
 
         //where the lego need to be, (don't exist)
         goal = Object.keys(data)[1];
 
+
         //if the old current one is different than the goal we have to change things
         if (oldCurrent != goal) {
+            let t = false;
 
             //if there is a current lego, play the place animation on it
             if (oldCurrent != -1) {
@@ -563,12 +567,29 @@ function updateChoose(file_choose) {
                 lego_goal.material.opacity = 0.5;
 
                 //play the animation and delete it (inside the function)
-                throwLego(lego_goal);
-            } else {
-                update();
+                throwLego(lego_down, lego_goal);
+                t = true;
             }
+
             //update
             oldCurrent = goal;
+
+            lego_move = legos.get(move);
+            lego_move["type"] = "previous";
+
+            remove_LEGO(scene.getObjectByName(move));
+            LEGO_move = add_LEGO(lego_move["color"],
+                1,
+                1,
+                lego_move["position"]["x"],
+                lego_move["position"]["y"],
+                lego_move["position"]["z"],
+                scene,
+                false,
+                lego_move["type"],
+                move,
+                false
+            );
 
 
             //set the position blinking
@@ -599,18 +620,20 @@ function updateChoose(file_choose) {
                 scene,
                 false,
                 lego["type"],
-                goal,
+                goal + "g",
                 false);
-
-
-            //take the lego who need to be move and animate it;
-            let obj_lego = scene.getObjectByName(lego_move);
-            gripLego(obj_lego);
+            if (!t) {
+                remove_LEGO(LEGO_move)
+                test();
+            }
         } else {
             test();
         }
     });
 }
+
+
+//TODO VERIFIE BIEN LES CONDITIONS, surtout la fonction upadteChoose, il y a pas mal de chose a modifier et verifier mais c'est sur la bonne voie.
 
 
 function getColorFromData(color_) {
@@ -640,6 +663,36 @@ function getColorFromData(color_) {
             break;
     }
     return color;
+}
+
+/* 
+  this function take a color in entrie like this :
+    R : 0.9
+    G : 0
+    B : 0.7364
+  and check the correspondance to return the good color name
+*/
+function colorNameFromTreeJSColors(color) {
+
+    //get the colors string defined clearly:
+    let calc = color["r"].toFixed(3).toString() + '-' + color["g"].toFixed(3).toString() + '-' + color["b"].toFixed(3).toString();
+
+    //test the combinaison
+    if (calc == "0.502-0.502-0.000") { //olive
+        return "olive";
+    } else if (calc == "0.820-0.000-0.000") { //red
+        return "red";
+    } else if (calc == "0.902-0.902-0.000") { //yellow
+        return "yellow";
+    } else if (calc == "0.000-0.702-0.000") { // green
+        return "green";
+    } else if (calc == "0.000-0.200-0.600") { //blue
+        return "blue";
+    } else if (calc == "0.565-0.933-0.565") { //light green
+        return "light_green";
+    } else { //others
+        return "black";
+    }
 }
 
 //variable for the blinking effect
@@ -820,19 +873,22 @@ function gripLego(lego) {
     animate_down_g();
 }
 
+var lego_down;
 
-function throwLego(lego) {
-    lego_goal = lego;
+
+function throwLego(lego_d, lego_g) {
+    lego_goal = lego_g;
+    lego_down = lego_d;
     //get the position of the previous lego
     prev_OG = Object();
-    Object.assign(prev_OG, previous.position);
+    Object.assign(prev_OG, lego_down.position);
 
     //add a gripper at the right place
     grip_t = add_gripper("grey", prev_OG, "horizontal", scene);
 
     //where the gripper will start
-    previous.position.y *= distance_beg;
-    grip_t.position.y += (previous.position.y - prev_OG.y);
+    lego_down.position.y *= distance_beg;
+    grip_t.position.y += (lego_down.position.y - prev_OG.y);
 
     //create the gripper and run animation
     gripper_OG_t = Object();
@@ -850,13 +906,13 @@ function animate_down_t() {
     renderer.render(scene, camera);
 
     //If it's finish
-    if (previous.position.y <= prev_OG.y) {
-        previous.position.y = prev_OG.y;
+    if (lego_down.position.y <= prev_OG.y) {
+        lego_down.position.y = prev_OG.y;
         cancelAnimationFrame(id);
         animate_up_t();
     } else {
         //update position for next frame
-        previous.position.y -= prev_OG.y / speed_t;
+        lego_down.position.y -= prev_OG.y / speed_t;
         grip_t.position.y -= prev_OG.y / speed_t;
     }
 
@@ -877,7 +933,9 @@ function animate_up_t() {
 
         //remove the old current
         scene.remove(lego_goal);
-        update();
+
+        remove_LEGO(LEGO_move);
+        test();
     } else {
         grip_t.position.y += prev_OG.y / speed_t;
     }
@@ -886,13 +944,6 @@ function animate_up_t() {
 
 var nb = 0;
 
-function update() {
-    nb++;
-    if (nb == 2) {
-        test();
-        nb = 0;
-    }
-}
 // start navigation orbit
 
 document.getElementById("top").addEventListener("click", function() {
@@ -1017,10 +1068,12 @@ camera.rotation.set(init_rot_x, init_rot_y, init_rot_z);
 var iterator = 2;
 
 function test() {
-    file = "../data/data" + iterator + ".json";
-    file2 = "../data/choose" + iterator + ".json";
-    read_robot_input(file, file2);
-    if (iterator < 3) {
-        iterator++;
-    }
+    setTimeout(function() {
+        file = "../data/data" + iterator + ".json";
+        file2 = "../data/choose" + iterator + ".json";
+        read_robot_input(file, file2);
+        if (iterator < 3) {
+            iterator++;
+        }
+    }, 2000)
 }
