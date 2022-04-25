@@ -1075,18 +1075,7 @@ function stopExec() {
 
 
 function resetExec() {
-    stop_robot = true;
-
-    //unpress the button
-    let button = document.querySelector('#start');
-    button.disabled = false;
-
-    //reset all the elements
-    legos.clear();
-    scene.clear();
-
-    setup_execution();
-
+    document.location.reload(true);
 }
 
 
