@@ -460,7 +460,8 @@ addLight(scene);
 // this legos array contains the informations of the top legos in x,y coordinate
 var legos = new Map();
 
-var oldCurrent = -1;
+var oldGoal = -1;
+var OldMove = -1;
 var current;
 var previous;
 var blink = "up";
@@ -507,9 +508,10 @@ function read_robot_input(file_data = "../data/data.json", file_choose = "../dat
 
                     position: position,
 
-                    color: color
-                }
+                    color: color,
 
+                    name: key + "_" + position["z"]
+                }
 
                 //add to the map
                 legos.set(key, lego);
@@ -524,11 +526,11 @@ function read_robot_input(file_data = "../data/data.json", file_choose = "../dat
                     scene,
                     false,
                     legos.get(key)["type"],
-                    key,
+                    legos.get(key)["name"],
                     false);
-                if (key == oldCurrent) {
+                /*if (key == oldGoal) {
                     lego_down = tmp;
-                }
+                }*/
             }
         });
 
@@ -538,8 +540,9 @@ function read_robot_input(file_data = "../data/data.json", file_choose = "../dat
 }
 
 var lego_g;
-var lego_down;
 var LEGO_move;
+var lego_goal;
+var lego_down;
 
 function updateChoose(file_choose) {
     fetch(file_choose).then(function(resp) {
@@ -554,30 +557,46 @@ function updateChoose(file_choose) {
 
 
         //if the old current one is different than the goal we have to change things
-        if (oldCurrent != goal) {
+        if (oldGoal != goal) {
             let t = false;
 
             //if there is a current lego, play the place animation on it
-            if (oldCurrent != -1) {
-                //get the place where the lego will drop
-                let lego_goal = lego_g;
+            if (oldGoal != -1) {
 
-                //make it transparent
-                lego_goal.material.transparent = true;
-                lego_goal.material.opacity = 0.5;
+                //set the transparant lego and delete it after
+                lego_g = scene.getObjectByName(legos.get(oldGoal)["name"] + "_goal");
+                lego_g.material.transparent = true;
+                lego_g.material.opacity = 0.5;
+
+                //get the place where the lego will drop
+                lego_goal = scene.getObjectByName(legos.get(oldGoal)["name"]);
+
+
+                //get the lego who have to drop
+                lego_down = scene.getObjectByName(legos.get(oldMove)["name"]);
+
+
+
+
 
                 //play the animation and delete it (inside the function)
-                throwLego(lego_down, lego_goal);
+                throwLego();
+
                 t = true;
             }
 
             //update
-            oldCurrent = goal;
+            oldGoal = goal;
+            oldMove = move;
 
+            //replace the move lego by one who have border
             lego_move = legos.get(move);
-            lego_move["type"] = "previous";
+            remove_LEGO(scene.getObjectByName(lego_move["name"]));
 
-            remove_LEGO(scene.getObjectByName(move));
+            //update lego
+            lego_move["type"] = "previous";
+            lego_move["name"] = lego_move["name"] + "_move";
+
             LEGO_move = add_LEGO(lego_move["color"],
                 1,
                 1,
@@ -587,12 +606,12 @@ function updateChoose(file_choose) {
                 scene,
                 false,
                 lego_move["type"],
-                move,
+                lego_move["name"],
                 false
             );
 
 
-            //set the position blinking
+            //set the goal blinking
             let char = goal.split('');
 
             let position = {
@@ -608,10 +627,12 @@ function updateChoose(file_choose) {
 
                 position: position,
 
-                color: color
+                color: color,
+
+                name: goal + "_" + position["z"]
             }
 
-            lego_g = add_LEGO(lego["color"],
+            add_LEGO(lego["color"],
                 1,
                 1,
                 lego["position"]["x"],
@@ -620,10 +641,9 @@ function updateChoose(file_choose) {
                 scene,
                 false,
                 lego["type"],
-                goal + "g",
+                lego["name"] + "_goal",
                 false);
             if (!t) {
-                remove_LEGO(LEGO_move)
                 test();
             }
         } else {
@@ -797,98 +817,25 @@ for all the situation, there is differents things to do , so differents function
 */
 
 // Variables for the gripper animation 
-//grip animation :
-var lego_move;
-var lego_move_position;
-var grip_g;
-var gripper_OG_g;
-var speed_g;
 
 //general
 var distance_beg = 18;
-
-//throw animation
-var lego_goal;
 var grip_t;
 var gripper_OG_t;
 var speed_t = 1.5;
 
-//when the gripper goes down
-function animate_down_g() {
 
-    //we get the number of the actual animation frame
-    id = requestAnimationFrame(animate_down_g);
-
-    //show it on screen
-    renderer.render(scene, camera);
-
-    //if the head of the gripper is in contact with the lego
-    if (grip_g.position.y - grip_g.geometry.parameters.height / 2 <= lego_move.position.y + lego_move.geometry.parameters.height / 2) {
-        cancelAnimationFrame(id);
-        animate_up_g();
-    } else {
-        //update position for next frame
-        grip_g.position.y -= speed_g;
-    }
-
-}
-
-function animate_up_g() {
-    id = requestAnimationFrame(animate_up_g);
-
-    renderer.render(scene, camera);
-
-    //if the gripper came back to his previous position
-    if (grip_g.position.y >= gripper_OG_g.y) {
-
-        cancelAnimationFrame(id);
-
-        //remove the gripper
-        scene.remove(grip_g);
-
-        //remove the old current
-        remove_LEGO(lego_move);
-        update();
-    } else {
-        grip_g.position.y += speed_g;
-        lego_move.position.y += speed_g;
-    }
-
-
-}
-
-function gripLego(lego) {
-    lego_move = lego;
-    speed_g = lego_move.position.y; // 1.7 is a value who can be changed for more or less speed
-
-    //add a gripper at the right place
-    grip_g = add_gripper("grey", lego_move.position, "horizontal", scene);
-
-    //where the gripper will start
-    grip_g.position.y += ((lego_move.position.y * distance_beg) - lego_move.position.y);
-
-    //create the gripper and run animation
-    gripper_OG_g = Object();
-    Object.assign(gripper_OG_g, grip_g.position);
-    animate_down_g();
-}
-
-var lego_down;
-
-
-function throwLego(lego_d, lego_g) {
-    lego_goal = lego_g;
-    lego_down = lego_d;
+function throwLego() {
     //get the position of the previous lego
     prev_OG = Object();
-    Object.assign(prev_OG, lego_down.position);
+    Object.assign(prev_OG, lego_goal.position);
 
     //add a gripper at the right place
     grip_t = add_gripper("grey", prev_OG, "horizontal", scene);
 
     //where the gripper will start
-    lego_down.position.y *= distance_beg;
-    grip_t.position.y += (lego_down.position.y - prev_OG.y);
+    lego_goal.position.y *= distance_beg;
+    grip_t.position.y += (lego_goal.position.y - prev_OG.y);
 
     //create the gripper and run animation
     gripper_OG_t = Object();
@@ -906,13 +853,13 @@ function animate_down_t() {
     renderer.render(scene, camera);
 
     //If it's finish
-    if (lego_down.position.y <= prev_OG.y) {
-        lego_down.position.y = prev_OG.y;
+    if (lego_goal.position.y <= prev_OG.y) {
+        lego_goal.position.y = prev_OG.y;
         cancelAnimationFrame(id);
         animate_up_t();
     } else {
         //update position for next frame
-        lego_down.position.y -= prev_OG.y / speed_t;
+        lego_goal.position.y -= prev_OG.y / speed_t;
         grip_t.position.y -= prev_OG.y / speed_t;
     }
 
@@ -932,9 +879,9 @@ function animate_up_t() {
         scene.remove(grip_t);
 
         //remove the old current
-        scene.remove(lego_goal);
+        scene.remove(lego_g);
 
-        remove_LEGO(LEGO_move);
+        scene.remove(lego_down);
         test();
     } else {
         grip_t.position.y += prev_OG.y / speed_t;
@@ -1069,11 +1016,15 @@ var iterator = 2;
 
 function test() {
     setTimeout(function() {
+        console.log(iterator);
         file = "../data/data" + iterator + ".json";
         file2 = "../data/choose" + iterator + ".json";
         read_robot_input(file, file2);
-        if (iterator < 3) {
+        if (iterator < 4) {
             iterator++;
         }
-    }, 2000)
+    }, 3000)
 }
+
+
+//TODO AJOUTER LES BOUTONS
