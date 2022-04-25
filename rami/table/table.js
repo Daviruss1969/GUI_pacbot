@@ -157,13 +157,34 @@ function add_LEGO(color, dim_x, dim_y, pos_x, pos_y, pos_z, scene, draggable, ty
     // adding the studs
     for (var i = 0; i < dim_x; i++) {
         for (var j = 0; j < dim_y; j++) {
-            stud = new THREE.Mesh(new THREE.CylinderGeometry(STUD_WIDTH / 2, STUD_WIDTH / 2, STUD_HEIGHT, STUD_NUM_SIDES), new THREE.MeshLambertMaterial({ color: col }));
+            let width = STUD_WIDTH / 2;
+            let height = STUD_HEIGHT / 1.5;
+            let space = STUD_WIDTH / 4;
+            studlt = new THREE.Mesh(new THREE.CylinderGeometry(width / 2, width / 2, height, STUD_NUM_SIDES), new THREE.MeshLambertMaterial({ color: col }));
+            studlb = new THREE.Mesh(new THREE.CylinderGeometry(width / 2, width / 2, height, STUD_NUM_SIDES), new THREE.MeshLambertMaterial({ color: col }));
+            studrt = new THREE.Mesh(new THREE.CylinderGeometry(width / 2, width / 2, height, STUD_NUM_SIDES), new THREE.MeshLambertMaterial({ color: col }));
+            studrb = new THREE.Mesh(new THREE.CylinderGeometry(width / 2, width / 2, height, STUD_NUM_SIDES), new THREE.MeshLambertMaterial({ color: col }));
 
-            stud.position.y = (0.5) * LEGO_HEIGHT + (STUD_HEIGHT) / 2 + PLATE_HEIGHT;
-            stud.position.x = (STUD_WIDTH / 2 + STUD_PADDING + i * (STUD_WIDTH + STUD_SPACING) - x / 2);
-            stud.position.z = -(-z / 2 + STUD_WIDTH / 2 + STUD_PADDING + j * (STUD_WIDTH + STUD_SPACING));
+            studlt.position.y = (0.5) * LEGO_HEIGHT + (STUD_HEIGHT) / 2;
+            studlt.position.x = (STUD_WIDTH / 4 + STUD_PADDING + i * (STUD_WIDTH + STUD_SPACING) - x / 2) - space;
+            studlt.position.z = -(-z / 4 + STUD_WIDTH / 2 + STUD_PADDING + j * (STUD_WIDTH + STUD_SPACING));
 
-            cube.add(stud);
+            studlb.position.y = (0.5) * LEGO_HEIGHT + (STUD_HEIGHT) / 2;
+            studlb.position.x = (STUD_WIDTH / 4 + STUD_PADDING + i * (STUD_WIDTH + STUD_SPACING) - x / 2) - space;
+            studlb.position.z = -(-z / 1.5 + STUD_WIDTH / 2 + STUD_PADDING + j * (STUD_WIDTH + STUD_SPACING));
+
+            studrt.position.y = (0.5) * LEGO_HEIGHT + (STUD_HEIGHT) / 2;
+            studrt.position.x = (STUD_WIDTH / 1.5 + STUD_PADDING + i * (STUD_WIDTH + STUD_SPACING) - x / 2) + space;
+            studrt.position.z = -(-z / 4 + STUD_WIDTH / 2 + STUD_PADDING + j * (STUD_WIDTH + STUD_SPACING));
+
+            studrb.position.y = (0.5) * LEGO_HEIGHT + (STUD_HEIGHT) / 2;
+            studrb.position.x = (STUD_WIDTH / 1.5 + STUD_PADDING + i * (STUD_WIDTH + STUD_SPACING) - x / 2) + space;
+            studrb.position.z = -(-z / 1.5 + STUD_WIDTH / 2 + STUD_PADDING + j * (STUD_WIDTH + STUD_SPACING));
+
+            cube.add(studlt);
+            cube.add(studlb);
+            cube.add(studrt);
+            cube.add(studrb);
         }
     }
 
@@ -1070,4 +1091,4 @@ function resetExec() {
 
 
 
-//TODO AJOUTER LES BOUTONS + dessiner correctement les legos
+//TODO AJOUTER LES BOUTONS + dessiner correctement les legos (les studs)
