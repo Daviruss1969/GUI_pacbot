@@ -528,9 +528,6 @@ function read_robot_input(file_data = "../data/data.json", file_choose = "../dat
                     legos.get(key)["type"],
                     legos.get(key)["name"],
                     false);
-                /*if (key == oldGoal) {
-                    lego_down = tmp;
-                }*/
             }
         });
 
@@ -558,7 +555,7 @@ function updateChoose(file_choose) {
 
         //if the old current one is different than the goal we have to change things
         if (oldGoal != goal) {
-            let t = false;
+            let isUpdate = false;
 
             //if there is a current lego, play the place animation on it
             if (oldGoal != -1) {
@@ -582,7 +579,7 @@ function updateChoose(file_choose) {
                 //play the animation and delete it (inside the function)
                 throwLego();
 
-                t = true;
+                isUpdate = true;
             }
 
             //update
@@ -643,7 +640,7 @@ function updateChoose(file_choose) {
                 lego["type"],
                 lego["name"] + "_goal",
                 false);
-            if (!t) {
+            if (!isUpdate) {
                 test();
             }
         } else {
@@ -685,41 +682,8 @@ function getColorFromData(color_) {
     return color;
 }
 
-/* 
-  this function take a color in entrie like this :
-    R : 0.9
-    G : 0
-    B : 0.7364
-  and check the correspondance to return the good color name
-*/
-function colorNameFromTreeJSColors(color) {
-
-    //get the colors string defined clearly:
-    let calc = color["r"].toFixed(3).toString() + '-' + color["g"].toFixed(3).toString() + '-' + color["b"].toFixed(3).toString();
-
-    //test the combinaison
-    if (calc == "0.502-0.502-0.000") { //olive
-        return "olive";
-    } else if (calc == "0.820-0.000-0.000") { //red
-        return "red";
-    } else if (calc == "0.902-0.902-0.000") { //yellow
-        return "yellow";
-    } else if (calc == "0.000-0.702-0.000") { // green
-        return "green";
-    } else if (calc == "0.000-0.200-0.600") { //blue
-        return "blue";
-    } else if (calc == "0.565-0.933-0.565") { //light green
-        return "light_green";
-    } else { //others
-        return "black";
-    }
-}
-
 //variable for the blinking effect
 var myVar;
-
-//for the initialisation we run a first input
-read_robot_input();
 
 
 render_animate_selected();
@@ -812,13 +776,8 @@ function add_gripper(color, pos, orientation, scene) {
 //
 //
 //ANIMATION OF THE GRIP
-/* there will be 2 type of the gripper animation, the grip one and the throw one
-for all the situation, there is differents things to do , so differents function
-*/
 
 // Variables for the gripper animation 
-
-//general
 var distance_beg = 18;
 var grip_t;
 var gripper_OG_t;
@@ -889,8 +848,19 @@ function animate_up_t() {
 
 }
 
-var nb = 0;
 
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 // start navigation orbit
 
 document.getElementById("top").addEventListener("click", function() {
@@ -1008,9 +978,13 @@ document.addEventListener("keydown", function(event) {
 camera.position.set(init_pos_x, init_pos_y, init_pos_z);
 camera.rotation.set(init_rot_x, init_rot_y, init_rot_z);
 
-
-
-
+//
+//
+//
+//
+//
+//
+//
 //just for testing
 var iterator = 2;
 

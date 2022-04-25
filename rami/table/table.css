@@ -1,15 +1,13 @@
 body {
-  overflow: hidden;
-  margin: 0;
+    overflow: hidden;
+    margin: 0;
 }
 
 svg {
-  transform-origin: center center;
+    transform-origin: center center;
 }
 
-
-#nav_panel
-{
+#nav_panel {
     position: absolute;
     right: 10px;
     top: 10px;
@@ -34,84 +32,75 @@ svg {
     border-radius: 0px;
 }
 
-#rotate
-{
+#rotate {
     border: 1px solid #111;
     opacity: 0.8;
     cursor: default;
     -webkit-box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
     box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
     -webkit-user-selection: none;
-    background: -webkit-gradient(linear,left bottom,left top,color-stop(0,#303840),color-stop(1,#202224));
-    background: -ms-linear-gradient(bottom,#303840,#202224);
-    background: -moz-linear-gradient(center bottom,#303840 0,#202224 100%);
+    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #303840), color-stop(1, #202224));
+    background: -ms-linear-gradient(bottom, #303840, #202224);
+    background: -moz-linear-gradient(center bottom, #303840 0, #202224 100%);
     -webkit-user-select: none;
-    
     left: 0;
     right: 0;
     width: 60px;
     height: 60px;
     line-height: 20px;
     -webkit-border-radius: 30px;
-    border-radius: 30px;    
+    border-radius: 30px;
 }
 
-.nav_btn
-{
-   position:absolute;
-   text-align:center;
-   color:silver;
-   text-shadow: 0 0 2px rgba(0, 0, 0, 0.9);
-   cursor: default;
-   -webkit-user-select: none;
+.nav_btn {
+    position: absolute;
+    text-align: center;
+    color: silver;
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.9);
+    cursor: default;
+    -webkit-user-select: none;
 }
 
-.nav_btn:hover
-{
+.nav_btn:hover {
     color: #4d90fe;
     font-size: 15px;
     cursor: pointer;
     text-shadow: 0 0px 6px rgba(0, 0, 0, 0.9);
 }
 
-#top
-{  
-    left:10px;
-    top:0;
+#top {
+    left: 10px;
+    top: 0;
     width: 40px;
     height: 20px;
     line-height: 20px;
 }
 
-#bottom
-{
-    left:10px;
-    top:40px;
+#bottom {
+    left: 10px;
+    top: 40px;
     width: 40px;
     height: 20px;
     line-height: 20px;
 }
 
-#right
-{
-    left:40px;
-    top:10px;
+#right {
+    left: 40px;
+    top: 10px;
     width: 20px;
     height: 40px;
     line-height: 40px;
 }
 
-#left
-{
-    left:0px;
-    top:10px;
+#left {
+    left: 0px;
+    top: 10px;
     width: 20px;
     height: 40px;
     line-height: 40px;
 }
 
-#middle
-{
+#middle {
     left: 20px;
     top: 20px;
     width: 20px;
@@ -120,8 +109,7 @@ svg {
     opacity: 0.8;
 }
 
-#zoom_panel
-{
+#zoom_panel {
     position: absolute;
     border: 1px solid #111;
     opacity: 0.8;
@@ -129,9 +117,9 @@ svg {
     -webkit-box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
     box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
     -webkit-user-selection: none;
-    background: -webkit-gradient(linear,left bottom,left top,color-stop(0,#303840),color-stop(1,#202224));
-    background: -ms-linear-gradient(bottom,#303840,#202224);
-    background: -moz-linear-gradient(center bottom,#303840 0,#202224 100%);
+    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #303840), color-stop(1, #202224));
+    background: -ms-linear-gradient(bottom, #303840, #202224);
+    background: -moz-linear-gradient(center bottom, #303840 0, #202224 100%);
     left: 20px;
     top: 70px;
     width: 20px;
@@ -140,8 +128,7 @@ svg {
     border-radius: 8px;
 }
 
-#zoom_in
-{
+#zoom_in {
     left: 0;
     top: 0;
     width: 20px;
@@ -150,8 +137,7 @@ svg {
     border-bottom: 1px solid black;
 }
 
-#zoom_out
-{
+#zoom_out {
     left: 0;
     top: 25px;
     width: 20px;
@@ -159,8 +145,7 @@ svg {
     line-height: 25px;
 }
 
-#move_panel
-{
+#move_panel {
     position: absolute;
     border: 1px solid #111;
     opacity: 0.8;
@@ -168,9 +153,9 @@ svg {
     -webkit-box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
     box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
     -webkit-user-selection: none;
-    background: -webkit-gradient(linear,left bottom,left top,color-stop(0,#303840),color-stop(1,#202224));
-    background: -ms-linear-gradient(bottom,#303840,#202224);
-    background: -moz-linear-gradient(center bottom,#303840 0,#202224 100%);
+    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #303840), color-stop(1, #202224));
+    background: -ms-linear-gradient(bottom, #303840, #202224);
+    background: -moz-linear-gradient(center bottom, #303840 0, #202224 100%);
     left: 5px;
     top: 140px;
     width: 50px;
@@ -179,8 +164,7 @@ svg {
     border-radius: 8px;
 }
 
-#move_left
-{
+#move_left {
     left: 0;
     top: 0;
     width: 25px;
@@ -189,12 +173,46 @@ svg {
     border-bottom: 1px solid black;
 }
 
-#move_right
-{
+#move_right {
     left: 25px;
     top: 0;
     width: 25px;
     height: 20px;
     line-height: 20px;
 }
-  
+
+.button {
+    position: absolute;
+    padding: 15px 25px;
+    font-size: 24px;
+    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #303840), color-stop(1, #202224));
+    right: 45%;
+    bottom: 150px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    outline: none;
+    color: #fff;
+    background-color: #4CAF50;
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 9px #999;
+}
+
+.button:hover {
+    background-color: #3e8e41
+}
+
+.button:active {
+    background-color: #3e8e41;
+    box-shadow: 0 5px #666;
+    transform: translateY(4px);
+}
+
+#start {
+    margin-right: 300px;
+}
+
+#stop {
+    margin-right: 150px;
+}
