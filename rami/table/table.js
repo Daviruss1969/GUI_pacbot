@@ -1,3 +1,5 @@
+setup_execution();
+
 function addLight(scene) {
     const color = 0xFFFFFF;
     const intensity = 1;
@@ -410,61 +412,96 @@ function render_animate_selected() {
 // 
 
 // main
-var STUD_WIDTH = 4.8;
-var STUD_SPACING = 3.2;
-var PLATE_HEIGHT = 0.5;
-var STUD_HEIGHT = 1.7;
-var STUD_PADDING = STUD_WIDTH / 3.2; // table sides
-var STUD_NUM_SIDES = 32;
-var LEGO_HEIGHT = 9.6;
-var FloorWidth = 23;
-var FloorHeight = 14;
+function setup_execution() {
+    STUD_WIDTH = 4.8;
+    STUD_SPACING = 3.2;
+    PLATE_HEIGHT = 0.5;
+    STUD_HEIGHT = 1.7;
+    STUD_PADDING = STUD_WIDTH / 3.2; // table sides
+    STUD_NUM_SIDES = 32;
+    LEGO_HEIGHT = 9.6;
+    FloorWidth = 23;
+    FloorHeight = 14;
 
-// table positions
-var MIN_X = -computePlateLength(FloorWidth / 2);
-var MIN_Y = -computePlateLength(FloorHeight / 2);
-var MAX_X = computePlateLength(FloorWidth / 2);
-var MAX_Y = computePlateLength(FloorHeight / 2);
+    // table positions
+    MIN_X = -computePlateLength(FloorWidth / 2);
+    MIN_Y = -computePlateLength(FloorHeight / 2);
+    MAX_X = computePlateLength(FloorWidth / 2);
+    MAX_Y = computePlateLength(FloorHeight / 2);
 
-var objects = [];
+    objects = [];
 
-var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
-
-
-const init_pos_x = -1.902388126728884;
-const init_pos_y = 195.6798407538288;
-const init_pos_z = 83.03738904083703;
-
-const init_rot_x = -1.2028291652806293;
-const init_rot_y = 0.0017060211432452725;
-const init_rot_z = 0.004425142911459734;
-
-var renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
-
-// LEGO table
-table_studs = [];
-stud_levels = createFloor(FloorWidth, FloorHeight, scene);
-var latest_stud;
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
 
 
-// light
-addLight(scene);
+    init_pos_x = -1.902388126728884;
+    init_pos_y = 195.6798407538288;
+    init_pos_z = 83.03738904083703;
+
+    init_rot_x = -1.2028291652806293;
+    init_rot_y = 0.0017060211432452725;
+    init_rot_z = 0.004425142911459734;
+
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // LEGO table
+    table_studs = [];
+    stud_levels = createFloor(FloorWidth, FloorHeight, scene);
+
+
+    // light
+    addLight(scene);
 
 
 
 
-// special lego objs
-// this legos array contains the informations of the top legos in x,y coordinate
-var legos = new Map();
+    // special lego objs
+    // this legos array contains the informations of the top legos in x,y coordinate
+    legos = new Map();
 
-var oldGoal = -1;
-var OldMove = -1;
-var current;
-var previous;
-var blink = "up";
+    stop_robot = false;
+    oldGoal = -1;
+    oldMove = -1;
+    current = undefined;
+    previous = undefined;
+    blink = "up";
+
+
+    //for the choose one
+    lego_g = undefined;
+    LEGO_move = undefined;
+    lego_goal = undefined;
+    lego_down = undefined;
+
+
+    //variable for the blinking effect
+    myVar = undefined;
+
+    // Variables for the gripper animation 
+    id = undefined;
+    distance_beg = 18;
+    grip_t = undefined;
+    gripper_OG_t = undefined;
+    speed_t = 1.5;
+
+
+    render_animate_selected();
+
+    dir = new THREE.Vector3();
+    sph = new THREE.Spherical();
+
+
+    renderer.setAnimationLoop(() => {
+        renderer.render(scene, camera);
+        camera.getWorldDirection(dir);
+        sph.setFromVector3(dir);
+    });
+
+
+}
 
 
 
@@ -536,12 +573,9 @@ function read_robot_input(file_data = "../data/data.json", file_choose = "../dat
     })
 }
 
-var lego_g;
-var LEGO_move;
-var lego_goal;
-var lego_down;
-
 function updateChoose(file_choose) {
+
+
     fetch(file_choose).then(function(resp) {
         return resp.json();
     }).then(function(data) {
@@ -650,7 +684,6 @@ function updateChoose(file_choose) {
 }
 
 
-//TODO VERIFIE BIEN LES CONDITIONS, surtout la fonction upadteChoose, il y a pas mal de chose a modifier et verifier mais c'est sur la bonne voie.
 
 
 function getColorFromData(color_) {
@@ -682,23 +715,7 @@ function getColorFromData(color_) {
     return color;
 }
 
-//variable for the blinking effect
-var myVar;
 
-
-render_animate_selected();
-
-var dir = new THREE.Vector3();
-var sph = new THREE.Spherical();
-
-
-renderer.setAnimationLoop(() => {
-    renderer.render(scene, camera);
-    camera.getWorldDirection(dir);
-    sph.setFromVector3(dir);
-});
-
-var id;
 
 
 //add a gripper to the screen at the correct position
@@ -777,17 +794,14 @@ function add_gripper(color, pos, orientation, scene) {
 //
 //ANIMATION OF THE GRIP
 
-// Variables for the gripper animation 
-var distance_beg = 18;
-var grip_t;
-var gripper_OG_t;
-var speed_t = 1.5;
-
 
 function throwLego() {
     //get the position of the previous lego
     prev_OG = Object();
     Object.assign(prev_OG, lego_goal.position);
+
+    //remove the lego which was choose
+    scene.remove(lego_down);
 
     //add a gripper at the right place
     grip_t = add_gripper("grey", prev_OG, "horizontal", scene);
@@ -840,7 +854,6 @@ function animate_up_t() {
         //remove the old current
         scene.remove(lego_g);
 
-        scene.remove(lego_down);
         test();
     } else {
         grip_t.position.y += prev_OG.y / speed_t;
@@ -990,15 +1003,54 @@ var iterator = 2;
 
 function test() {
     setTimeout(function() {
-        console.log(iterator);
-        file = "../data/data" + iterator + ".json";
-        file2 = "../data/choose" + iterator + ".json";
-        read_robot_input(file, file2);
-        if (iterator < 4) {
-            iterator++;
+        if (!stop_robot) {
+            console.log(iterator);
+            file = "../data/data" + iterator + ".json";
+            file2 = "../data/choose" + iterator + ".json";
+            read_robot_input(file, file2);
+            if (iterator < 4) {
+                iterator++;
+            }
         }
     }, 3000)
 }
+
+function startExec() {
+    stop_robot = false;
+
+    //press the button
+    let button = document.querySelector('#start');
+    button.disabled = true;
+
+    //start the function
+    read_robot_input();
+}
+
+function stopExec() {
+
+    stop_robot = true;
+
+    //unpress the button
+    let button = document.querySelector('#start');
+    button.disabled = false;
+}
+
+
+function resetExec() {
+    stop_robot = true;
+
+    //unpress the button
+    let button = document.querySelector('#start');
+    button.disabled = false;
+
+    //reset all the elements
+    legos.clear();
+    scene.clear();
+
+    setup_execution();
+
+}
+
 
 
 //TODO AJOUTER LES BOUTONS

@@ -209,6 +209,15 @@ svg {
     transform: translateY(4px);
 }
 
+.button:disabled,
+button[disabled] {
+    border: 1px solid #999999;
+    background-color: #3e8e41;
+    box-shadow: 0 5px #666;
+    color: #0f0f0f;
+    transform: translateY(4px);
+}
+
 #start {
     margin-right: 300px;
 }
