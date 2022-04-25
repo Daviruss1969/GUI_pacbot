@@ -550,6 +550,23 @@ function read_robot_input(file_data = "../data/data.json", file_choose = "../dat
                     name: key + "_" + position["z"]
                 }
 
+
+
+                //If we remove one lego
+                if (legos.get(key) != undefined) {
+                    let difference = lego["position"]["z"] - legos.get(key)["position"]["z"];
+                    if (difference < 0) {
+                        for (let i = 0; i < Math.abs(difference); i++) {
+                            delpos = legos.get(key)["position"]["z"] - i;
+                            delname = lego["name"].substring(0, 8);
+                            delname = delname + delpos.toString();
+                            let obj = scene.getObjectByName(delname);
+                            remove_LEGO(obj);
+                        }
+                    }
+                }
+
+
                 //add to the map
                 legos.set(key, lego);
 
@@ -1008,11 +1025,11 @@ function test() {
             file = "../data/data" + iterator + ".json";
             file2 = "../data/choose" + iterator + ".json";
             read_robot_input(file, file2);
-            if (iterator < 4) {
+            if (iterator < 5) {
                 iterator++;
             }
         }
-    }, 3000)
+    }, 200)
 }
 
 function startExec() {
@@ -1053,4 +1070,4 @@ function resetExec() {
 
 
 
-//TODO AJOUTER LES BOUTONS
+//TODO AJOUTER LES BOUTONS + dessiner correctement les legos
