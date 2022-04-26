@@ -441,8 +441,8 @@ function setup_execution() {
     STUD_PADDING = STUD_WIDTH / 3.2; // table sides
     STUD_NUM_SIDES = 32;
     LEGO_HEIGHT = 9.6;
-    FloorWidth = 23;
-    FloorHeight = 14;
+    FloorWidth = 28;
+    FloorHeight = 11;
 
     // table positions
     MIN_X = -computePlateLength(FloorWidth / 2);
@@ -592,7 +592,7 @@ function read_robot_input(file_data = "../data/data.json", file_choose = "../dat
                 legos.set(key, lego);
 
                 //we add the lego to the scene
-                let tmp = add_LEGO(legos.get(key)["color"],
+                add_LEGO(legos.get(key)["color"],
                     1,
                     1,
                     legos.get(key)["position"]["x"],
@@ -619,6 +619,13 @@ function updateChoose(file_choose) {
     }).then(function(data) {
         console.log(data);
 
+
+
+
+
+
+
+        /*
         //the lego who will be move (have to exist)
         move = Object.keys(data)[0]
 
@@ -718,7 +725,7 @@ function updateChoose(file_choose) {
             }
         } else {
             //test();
-        }
+        }*/
     });
 }
 
