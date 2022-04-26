@@ -529,7 +529,7 @@ function setup_execution() {
 /* 
   this function take an json in entrie, parse it and show on screen the data of the json in a specifical way to have better coherance.
 */
-function read_robot_input(file_data = "../data/data.json", file_choose = "../data/choose.json", animate = false) {
+function read_robot_input(file_data = "../data/data.json", file_choose = "../data/plan.json", animate = false) {
 
     let update = false;
     //get the json file and parse it
@@ -617,6 +617,7 @@ function updateChoose(file_choose) {
     fetch(file_choose).then(function(resp) {
         return resp.json();
     }).then(function(data) {
+        console.log(data);
 
         //the lego who will be move (have to exist)
         move = Object.keys(data)[0]
@@ -713,10 +714,10 @@ function updateChoose(file_choose) {
                 lego["name"] + "_goal",
                 false);
             if (!isUpdate) {
-                test();
+                //test();
             }
         } else {
-            test();
+            //test();
         }
     });
 }
@@ -892,7 +893,7 @@ function animate_up_t() {
         //remove the old current
         scene.remove(lego_g);
 
-        test();
+        //test();
     } else {
         grip_t.position.y += prev_OG.y / speed_t;
     }
