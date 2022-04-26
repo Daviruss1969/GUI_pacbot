@@ -132,7 +132,7 @@ function add_LEGO(color, dim_x, dim_y, pos_x, pos_y, pos_z, scene, draggable, ty
     } else {
         cube.position.y = (0.5 + pos_z) * LEGO_HEIGHT + PLATE_HEIGHT;
         cube.position.x = computePlateLength(pos_x) + x / 2;
-        cube.position.z = -computePlateLength(pos_y) - z / 2;
+        cube.position.z = -computePlateLength(pos_y - 1) - z / 2;
     }
 
 
