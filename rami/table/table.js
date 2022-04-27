@@ -85,16 +85,6 @@ function get_dark_Color(val) {
     return codes[val];
 }
 
-function AddToGeometry(mainObject, objectToAdd) {
-    var combined = new THREE.BufferGeometry();
-
-    THREE.GeometryUtils.merge(combined, mainObject);
-    THREE.GeometryUtils.merge(combined, objectToAdd);
-
-    var mesh = new THREE.Mesh(combined, new THREE.MeshBasicMaterial({ color: 0xff0000 }));
-    return mesh;
-}
-
 function update_stud_levels_from_file(below_left, dim_x, dim_y) {
     for (let i = below_left[0]; i < below_left[0] + dim_x; i++)
         for (let j = below_left[1] - dim_y + 1; j <= below_left[1]; j++)
@@ -336,49 +326,6 @@ function draw_borders(cube, x, z, color, width) {
     cube.add(cube_4);
 }
 
-// adding, from saved data, the lego objects
-function read_file(id, section) {
-    const file = "../data/scenes.json";
-
-    fetch(file)
-        .then(function(resp) {
-            return resp.json();
-        })
-        .then(function(data) {
-            add_objects(data, id, section)
-        });
-}
-
-function add_objects(data, id, section) {
-
-
-    data = [{
-        "scene": 2,
-        "section": "data",
-        "radio": true,
-        "text": true,
-        "table": [
-            { "dim": [6, 2, 1], "pos": [4, 0, 0], "color": "yellow", "type": "other" },
-            { "dim": [6, 2, 1], "pos": [-2, -2, 0], "color": "red", "type": "previous" }
-        ]
-    }]
-
-    for (let s of data) {
-        for (let obj of s.table) {
-            dim = obj.dim;
-            pos = obj.pos;
-            color = obj.color;
-            type = obj.type;
-
-            if (type == 'current')
-                drag = true;
-            else
-                drag = false;
-            cub = add_LEGO(color, dim[0], dim[1], pos[0], pos[1], pos[2], scene, drag, type);
-        }
-    }
-}
-
 function blink_effect() {
     plan_legos.forEach((value, key) => {
         let lego = value["lego"];
@@ -476,10 +423,10 @@ function setup_execution() {
 
 
     // special lego objs
-    // this legos array contains the informations of the top legos in x,y coordinate
+    // this legos map contains the informations of the top legos in x,y coordinate
     legos = new Map();
 
-    // this legos array contains the informations of all the futures lego in x,y,é coordinate
+    // this legos map contains the informations of all the futures lego in x,y,é coordinate
     plan_legos = new Map();
 
     stop_robot = false;
@@ -587,6 +534,7 @@ function read_robot_input(file_data = "../data/data.json", file_plan = "../data/
                 }
 
 
+
                 //add to the map
                 legos.set(key, lego);
 
@@ -602,6 +550,7 @@ function read_robot_input(file_data = "../data/data.json", file_plan = "../data/
                     legos.get(key)["type"],
                     legos.get(key)["name"],
                     false);
+
             }
         });
 
@@ -612,201 +561,226 @@ function read_robot_input(file_data = "../data/data.json", file_plan = "../data/
 
 function updatePlan(file_plan) {
 
-
     fetch(file_plan).then(function(resp) {
         return resp.json();
     }).then(function(data) {
+
         //variable for the blinking variation
-        let variation = 0;
+        let variation = 0.2;
+        let intensity = 5;
 
         //iterate trought the json
         for (let key = 0; key < Object.keys(data).length; key++) {
 
-
             //put legos
             if (data[key][0].includes("put")) {
-                //increase the varition
-                variation += 0.2;
 
+                if (variation <= 0.8) {
+                    //for each case we have to know the length of the piece we take
+                    let iterator = data[key][0].charAt(data[key][0].length - 1) / 2;
 
-                //for each case we have to know the length of the piece we take
-                let iterator = data[key][0].charAt(data[key][0].length - 1) / 2;
+                    for (let i = 0; i < iterator; i++) {
+                        //position
+                        let pos = data[key][2].split('');
+                        let Dx = 0;
+                        let Dy = 0;
 
-                for (let i = 0; i < iterator; i++) {
-                    //position
-                    let pos = data[key][2].split('');
-                    let Dx = 0;
-                    let Dy = 0;
-                    //if there is a rotation
-                    if (data[key - 1][0].includes("rotate")) {
-                        //if there is no rotations 
-                        Dy = 1 * i;
-                    } else {
-                        Dx = 1 * i;
-                    }
-                    let position = {
-                        x: parseInt(pos[5] + pos[6]) + Dx - FloorWidth / 2,
-                        y: -(parseInt(pos[2] + pos[3]) + Dy - FloorHeight / 2),
-                        z: parseInt(pos[8])
-                    }
-
-                    //color
-                    let color = getColorFromData(data[key][1].charAt(0));
-
-                    let name;
-                    if (i == 0) {
-                        name = data[key][2];
-                    } else {
-                        let x = parseInt(pos[5] + pos[6]) + Dx;
-                        if (x < 10) {
-                            x = '0' + x;
+                        //if there is a rotation
+                        if (data[key - 1][0].includes("rotate")) {
+                            //if there is no rotations 
+                            Dy = 1 * i;
+                        } else {
+                            Dx = 1 * i;
                         }
-                        let y = parseInt(pos[2] + pos[3]) + Dy;
-                        if (y < 10) {
-                            y = '0' + y;
+
+                        let position = {
+                            x: parseInt(pos[5] + pos[6]) + Dx - FloorWidth / 2,
+                            y: -(parseInt(pos[2] + pos[3]) + Dy - FloorHeight / 2),
+                            z: parseInt(pos[8])
                         }
-                        name = "p_" + x + "_" + y + "_" + position["z"];
+
+                        //color
+                        let color = getColorFromData(data[key][1].charAt(0));
+
+                        //name of the lego
+                        let name;
+                        if (i == 0) {
+                            name = data[key][2];
+                        } else {
+                            let x = parseInt(pos[5] + pos[6]) + Dx;
+                            if (x < 10) {
+                                x = '0' + x;
+                            }
+                            let y = parseInt(pos[2] + pos[3]) + Dy;
+                            if (y < 10) {
+                                y = '0' + y;
+                            }
+                            name = "p_" + x + "_" + y + "_" + position["z"];
+                        }
+
+                        let lego = {
+                            type: "current",
+
+                            position: position,
+
+                            color: color,
+
+                            name: name,
+
+                            variation: variation
+                        }
+                        if (variation <= 0.8)
+                            lego["lego"] = add_LEGO(lego["color"],
+                                1,
+                                1,
+                                lego["position"]["x"],
+                                lego["position"]["y"],
+                                lego["position"]["z"],
+                                scene,
+                                false,
+                                lego["type"],
+                                lego["name"],
+                                false);
+
+                        plan_legos.set(lego["name"], lego);
                     }
-
-                    let lego = {
-                        type: "current",
-
-                        position: position,
-
-                        color: color,
-
-                        name: name,
-
-                        variation: variation
-                    }
-
-                    lego["lego"] = add_LEGO(lego["color"],
-                        1,
-                        1,
-                        lego["position"]["x"],
-                        lego["position"]["y"],
-                        lego["position"]["z"],
-                        scene,
-                        false,
-                        lego["type"],
-                        lego["name"],
-                        false);
-
-                    plan_legos.set(lego["name"], lego);
+                    //increase the varition
+                    variation += 0.2;
                 }
 
             }
 
+            //the lego who need to be get
+            if (data[key][0].includes("get")) {
+
+                //only 5 legos to see
+                if (intensity >= 2) {
+                    let width = computePlateLength(1);
+
+                    //if there is one or multiple lego to take
+                    if (typeof data[key][2] != "object") {
+                        let lego = scene.getObjectByName(data[key][2]);
+                        draw_borders(lego, width, width, "black", intensity);
+                    } else {
+                        let iterator = parseInt(data[key][0][6]) / 2;
+                        for (let i = 0; i < iterator; i++) {
+                            let lego = scene.getObjectByName(data[key][2][i]);
+                            draw_borders(lego, width, width, "black", intensity);
+                        }
+                    }
+                    intensity--;
+                }
+
+            }
         }
-
-
-
-
-
-
-
+        let name = Array.from(plan_legos.keys())[0];
+        console.log(name);
         /*
-        //the lego who will be move (have to exist)
-        move = Object.keys(data)[0]
-
-        //where the lego need to be, (don't exist)
-        goal = Object.keys(data)[1];
-
-
-        //if the old current one is different than the goal we have to change things
-        if (oldGoal != goal) {
-            let isUpdate = false;
-
-            //if there is a current lego, play the place animation on it
-            if (oldGoal != -1) {
-
-                //set the transparant lego and delete it after
-                lego_g = scene.getObjectByName(legos.get(oldGoal)["name"] + "_goal");
-                lego_g.material.transparent = true;
-                lego_g.material.opacity = 0.5;
-
-                //get the place where the lego will drop
-                lego_goal = scene.getObjectByName(legos.get(oldGoal)["name"]);
-
-
-                //get the lego who have to drop
-                lego_down = scene.getObjectByName(legos.get(oldMove)["name"]);
-
-
-
-
-
-                //play the animation and delete it (inside the function)
-                throwLego();
-
-                isUpdate = true;
-            }
-
-            //update
-            oldGoal = goal;
-            oldMove = move;
-
-            //replace the move lego by one who have border
-            lego_move = legos.get(move);
-            remove_LEGO(scene.getObjectByName(lego_move["name"]));
-
-            //update lego
-            lego_move["type"] = "previous";
-            lego_move["name"] = lego_move["name"] + "_move";
-
-            LEGO_move = add_LEGO(lego_move["color"],
-                1,
-                1,
-                lego_move["position"]["x"],
-                lego_move["position"]["y"],
-                lego_move["position"]["z"],
-                scene,
-                false,
-                lego_move["type"],
-                lego_move["name"],
-                false
-            );
-
-
-            //set the goal blinking
-            let char = goal.split('');
-
-            let position = {
-                x: parseInt(char[5] + char[6]) - FloorWidth / 2,
-                y: -(parseInt(char[2] + char[3]) - FloorHeight / 2),
-                z: parseInt(data[goal][1])
-            }
-
-            let color = getColorFromData(data[goal][0]);
-
-            let lego = {
-                type: "current",
-
-                position: position,
-
-                color: color,
-
-                name: goal + "_" + position["z"]
-            }
-
-            add_LEGO(lego["color"],
-                1,
-                1,
-                lego["position"]["x"],
-                lego["position"]["y"],
-                lego["position"]["z"],
-                scene,
-                false,
-                lego["type"],
-                lego["name"] + "_goal",
-                false);
-            if (!isUpdate) {
+            //the lego who will be move (have to exist)
+            move = Object.keys(data)[0]
+    
+            //where the lego need to be, (don't exist)
+            goal = Object.keys(data)[1];
+    
+    
+            //if the old current one is different than the goal we have to change things
+            if (oldGoal != goal) {
+                let isUpdate = false;
+    
+                //if there is a current lego, play the place animation on it
+                if (oldGoal != -1) {
+    
+                    //set the transparant lego and delete it after
+                    lego_g = scene.getObjectByName(legos.get(oldGoal)["name"] + "_goal");
+                    lego_g.material.transparent = true;
+                    lego_g.material.opacity = 0.5;
+    
+                    //get the place where the lego will drop
+                    lego_goal = scene.getObjectByName(legos.get(oldGoal)["name"]);
+    
+    
+                    //get the lego who have to drop
+                    lego_down = scene.getObjectByName(legos.get(oldMove)["name"]);
+    
+    
+    
+    
+    
+                    //play the animation and delete it (inside the function)
+                    throwLego();
+    
+                    isUpdate = true;
+                }
+    
+                //update
+                oldGoal = goal;
+                oldMove = move;
+    
+                //replace the move lego by one who have border
+                lego_move = legos.get(move);
+                remove_LEGO(scene.getObjectByName(lego_move["name"]));
+    
+                //update lego
+                lego_move["type"] = "previous";
+                lego_move["name"] = lego_move["name"] + "_move";
+    
+                LEGO_move = add_LEGO(lego_move["color"],
+                    1,
+                    1,
+                    lego_move["position"]["x"],
+                    lego_move["position"]["y"],
+                    lego_move["position"]["z"],
+                    scene,
+                    false,
+                    lego_move["type"],
+                    lego_move["name"],
+                    false
+                );
+    
+    
+                //set the goal blinking
+                let char = goal.split('');
+    
+                let position = {
+                    x: parseInt(char[5] + char[6]) - FloorWidth / 2,
+                    y: -(parseInt(char[2] + char[3]) - FloorHeight / 2),
+                    z: parseInt(data[goal][1])
+                }
+    
+                let color = getColorFromData(data[goal][0]);
+    
+                let lego = {
+                    type: "current",
+    
+                    position: position,
+    
+                    color: color,
+    
+                    name: goal + "_" + position["z"]
+                }
+    
+                add_LEGO(lego["color"],
+                    1,
+                    1,
+                    lego["position"]["x"],
+                    lego["position"]["y"],
+                    lego["position"]["z"],
+                    scene,
+                    false,
+                    lego["type"],
+                    lego["name"] + "_goal",
+                    false);
+                if (!isUpdate) {
+                    //test();
+                }
+            } else {
                 //test();
-            }
-        } else {
-            //test();
-        }*/
+            }*/
     });
+
+
+
+
 }
 
 
@@ -1165,7 +1139,3 @@ function stopExec() {
 function resetExec() {
     document.location.reload(true);
 }
-
-
-
-//TODO AJOUTER LES BOUTONS + dessiner correctement les legos (les studs)
