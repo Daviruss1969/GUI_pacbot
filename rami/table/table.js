@@ -439,6 +439,8 @@ function setup_execution() {
     FloorWidth = 28;
     FloorHeight = 11;
 
+
+
     // table positions
     MIN_X = -computePlateLength(FloorWidth / 2);
     MIN_Y = -computePlateLength(FloorHeight / 2);
@@ -470,7 +472,6 @@ function setup_execution() {
 
     // light
     addLight(scene);
-
 
 
 
@@ -590,7 +591,7 @@ function read_robot_input(file_data = "../data/data.json", file_plan = "../data/
                 legos.set(key, lego);
 
                 //we add the lego to the scene
-                /*add_LEGO(legos.get(key)["color"],
+                add_LEGO(legos.get(key)["color"],
                     1,
                     1,
                     legos.get(key)["position"]["x"],
@@ -600,7 +601,7 @@ function read_robot_input(file_data = "../data/data.json", file_plan = "../data/
                     false,
                     legos.get(key)["type"],
                     legos.get(key)["name"],
-                    false);*/
+                    false);
             }
         });
 
@@ -616,15 +617,16 @@ function updatePlan(file_plan) {
         return resp.json();
     }).then(function(data) {
         //variable for the blinking variation
-        let variation = 1;
+        let variation = 0;
 
         //iterate trought the json
         for (let key = 0; key < Object.keys(data).length; key++) {
 
 
+            //put legos
             if (data[key][0].includes("put")) {
                 //increase the varition
-                variation -= 0.2;
+                variation += 0.2;
 
 
                 //for each case we have to know the length of the piece we take
