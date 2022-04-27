@@ -380,29 +380,24 @@ function add_objects(data, id, section) {
 }
 
 function blink_effect() {
-    if (current) {
-        var t = current.material.opacity;
+    plan_legos.forEach((value, key) => {
+        let lego = value["lego"];
+        var t = lego.material.opacity;
 
-        if (t == 1)
-            blink = "down";
-
-        if (t == 0.5)
-            blink = "up";
-
-        if (blink == 'up') {
-            t = 2 * t;
+        if (t == 1) {
+            t = value["variation"];
         } else {
-            t = t / 2;
+            t = 1;
         }
 
-        for (let obj of current.children) {
+        for (let obj of lego.children) {
             obj.material.transparent = true;
             obj.material.opacity = t;
         }
 
-        current.material.transparent = true;
-        current.material.opacity = t;
-    }
+        lego.material.transparent = true;
+        lego.material.opacity = t;
+    })
 }
 
 function render_animate_selected() {
@@ -483,6 +478,9 @@ function setup_execution() {
     // this legos array contains the informations of the top legos in x,y coordinate
     legos = new Map();
 
+    // this legos array contains the informations of all the futures lego in x,y,é coordinate
+    plan_legos = new Map();
+
     stop_robot = false;
     oldGoal = -1;
     oldMove = -1;
@@ -529,7 +527,7 @@ function setup_execution() {
 /* 
   this function take an json in entrie, parse it and show on screen the data of the json in a specifical way to have better coherance.
 */
-function read_robot_input(file_data = "../data/data.json", file_choose = "../data/plan.json", animate = false) {
+function read_robot_input(file_data = "../data/data.json", file_plan = "../data/plan.json", animate = false) {
 
     let update = false;
     //get the json file and parse it
@@ -592,7 +590,7 @@ function read_robot_input(file_data = "../data/data.json", file_choose = "../dat
                 legos.set(key, lego);
 
                 //we add the lego to the scene
-                add_LEGO(legos.get(key)["color"],
+                /*add_LEGO(legos.get(key)["color"],
                     1,
                     1,
                     legos.get(key)["position"]["x"],
@@ -602,22 +600,102 @@ function read_robot_input(file_data = "../data/data.json", file_choose = "../dat
                     false,
                     legos.get(key)["type"],
                     legos.get(key)["name"],
-                    false);
+                    false);*/
             }
         });
 
         //update the lego and the goal who will be choose by the robot
-        updateChoose(file_choose);
+        updatePlan(file_plan);
     })
 }
 
-function updateChoose(file_choose) {
+function updatePlan(file_plan) {
 
 
-    fetch(file_choose).then(function(resp) {
+    fetch(file_plan).then(function(resp) {
         return resp.json();
     }).then(function(data) {
-        console.log(data);
+        //variable for the blinking variation
+        let variation = 1;
+
+        //iterate trought the json
+        for (let key = 0; key < Object.keys(data).length; key++) {
+
+
+            if (data[key][0].includes("put")) {
+                //increase the varition
+                variation -= 0.2;
+
+
+                //for each case we have to know the length of the piece we take
+                let iterator = data[key][0].charAt(data[key][0].length - 1) / 2;
+
+                for (let i = 0; i < iterator; i++) {
+                    //position
+                    let pos = data[key][2].split('');
+                    let Dx = 0;
+                    let Dy = 0;
+                    //if there is a rotation
+                    if (data[key - 1][0].includes("rotate")) {
+                        //if there is no rotations 
+                        Dy = 1 * i;
+                    } else {
+                        Dx = 1 * i;
+                    }
+                    let position = {
+                        x: parseInt(pos[5] + pos[6]) + Dx - FloorWidth / 2,
+                        y: -(parseInt(pos[2] + pos[3]) + Dy - FloorHeight / 2),
+                        z: parseInt(pos[8])
+                    }
+
+                    //color
+                    let color = getColorFromData(data[key][1].charAt(0));
+
+                    let name;
+                    if (i == 0) {
+                        name = data[key][2];
+                    } else {
+                        let x = parseInt(pos[5] + pos[6]) + Dx;
+                        if (x < 10) {
+                            x = '0' + x;
+                        }
+                        let y = parseInt(pos[2] + pos[3]) + Dy;
+                        if (y < 10) {
+                            y = '0' + y;
+                        }
+                        name = "p_" + x + "_" + y + "_" + position["z"];
+                    }
+
+                    let lego = {
+                        type: "current",
+
+                        position: position,
+
+                        color: color,
+
+                        name: name,
+
+                        variation: variation
+                    }
+
+                    lego["lego"] = add_LEGO(lego["color"],
+                        1,
+                        1,
+                        lego["position"]["x"],
+                        lego["position"]["y"],
+                        lego["position"]["z"],
+                        scene,
+                        false,
+                        lego["type"],
+                        lego["name"],
+                        false);
+
+                    plan_legos.set(lego["name"], lego);
+                }
+
+            }
+
+        }
 
 
 
