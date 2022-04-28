@@ -432,7 +432,8 @@ function setup_execution() {
     // this legos map contains the informations of all the futures lego in x,y,z coordinate
     plan_legos = new Map();
 
-
+    //
+    plan = new Array();
 
     stop_robot = false;
     oldGoal = -1;
@@ -566,123 +567,133 @@ function read_robot_input(file_data = "../data/data.json", file_plan = "../data/
 
 function updatePlan(file_plan) {
 
-    fetch(file_plan).then(function(resp) {
-        return resp.json();
-    }).then(function(data) {
-        actions = data;
-        console.log(actions);
+    //TODO if to change
+    if (true) {
+        fetch(file_plan).then(function(resp) {
+            return resp.json();
+        }).then(function(data) {
+            plan = data;
+            updateLegos();
+        });
+    } else {
+        updateLegos();
+    }
 
-        //variable for the blinking variation
-        let variation = 0.2;
-        let intensity = 5;
+    /*
+    actions = data;
+    console.log(actions);
 
-        //iterate trought the json
-        for (let key = 0; key < Object.keys(data).length; key++) {
+    //variable for the blinking variation
+    let variation = 0.2;
+    let intensity = 5;
 
-            //put legos
-            if (data[key][0].includes("put")) {
+    //iterate trought the json
+    for (let key = 0; key < Object.keys(data).length; key++) {
 
-                if (variation <= 0.8) {
-                    //for each case we have to know the length of the piece we take
-                    let iterator = data[key][0].charAt(data[key][0].length - 1) / 2;
+        //put legos
+        if (data[key][0].includes("put")) {
 
-                    for (let i = 0; i < iterator; i++) {
-                        //position
-                        let pos = data[key][2].split('');
-                        let Dx = 0;
-                        let Dy = 0;
+            if (variation <= 0.8) {
+                //for each case we have to know the length of the piece we take
+                let iterator = data[key][0].charAt(data[key][0].length - 1) / 2;
 
-                        //if there is a rotation
-                        if (data[key - 1][0].includes("rotate")) {
-                            //if there is no rotations 
-                            Dy = 1 * i;
-                        } else {
-                            Dx = 1 * i;
-                        }
+                for (let i = 0; i < iterator; i++) {
+                    //position
+                    let pos = data[key][2].split('');
+                    let Dx = 0;
+                    let Dy = 0;
 
-                        let position = {
-                            x: parseInt(pos[5] + pos[6]) + Dx - FloorWidth / 2,
-                            y: -(parseInt(pos[2] + pos[3]) + Dy - FloorHeight / 2),
-                            z: parseInt(pos[8])
-                        }
-
-                        //color
-                        let color = getColorFromData(data[key][1].charAt(0));
-
-                        //name of the lego
-                        let name;
-                        if (i == 0) {
-                            name = data[key][2];
-                        } else {
-                            let x = parseInt(pos[5] + pos[6]) + Dx;
-                            if (x < 10) {
-                                x = '0' + x;
-                            }
-                            let y = parseInt(pos[2] + pos[3]) + Dy;
-                            if (y < 10) {
-                                y = '0' + y;
-                            }
-                            name = "p_" + x + "_" + y + "_" + position["z"];
-                        }
-
-                        let lego = {
-                            type: "current",
-
-                            position: position,
-
-                            color: color,
-
-                            name: name,
-
-                            variation: variation
-                        }
-                        if (variation <= 0.8)
-                            lego["lego"] = add_LEGO(lego["color"],
-                                1,
-                                1,
-                                lego["position"]["x"],
-                                lego["position"]["y"],
-                                lego["position"]["z"],
-                                scene,
-                                false,
-                                lego["type"],
-                                lego["name"],
-                                false);
-
-                        plan_legos.set(lego["name"], lego);
-                    }
-                    //increase the varition
-                    variation += 0.2;
-                }
-
-            }
-            //TODO REPRENDRE LE NOUVEAU JSON DE BELAL
-            //the lego who need to be get
-            if (data[key][0].includes("get")) {
-
-                //only 5 legos to see
-                if (intensity >= 2) {
-                    let width = computePlateLength(1);
-
-                    //if there is one or multiple lego to take
-                    if (typeof data[key][2] != "object") {
-                        let lego = scene.getObjectByName(data[key][2]);
-                        draw_borders(lego, width, width, "black", intensity);
+                    //if there is a rotation
+                    if (data[key - 1][0].includes("rotate")) {
+                        //if there is no rotations 
+                        Dy = 1 * i;
                     } else {
-                        let iterator = parseInt(data[key][0][6]) / 2;
-                        for (let i = 0; i < iterator; i++) {
-                            let lego = scene.getObjectByName(data[key][2][i]);
-                            draw_borders(lego, width, width, "black", intensity);
-                        }
+                        Dx = 1 * i;
                     }
-                    intensity--;
-                }
 
+                    let position = {
+                        x: parseInt(pos[5] + pos[6]) + Dx - FloorWidth / 2,
+                        y: -(parseInt(pos[2] + pos[3]) + Dy - FloorHeight / 2),
+                        z: parseInt(pos[8])
+                    }
+
+                    //color
+                    let color = getColorFromData(data[key][1].charAt(0));
+
+                    //name of the lego
+                    let name;
+                    if (i == 0) {
+                        name = data[key][2];
+                    } else {
+                        let x = parseInt(pos[5] + pos[6]) + Dx;
+                        if (x < 10) {
+                            x = '0' + x;
+                        }
+                        let y = parseInt(pos[2] + pos[3]) + Dy;
+                        if (y < 10) {
+                            y = '0' + y;
+                        }
+                        name = "p_" + x + "_" + y + "_" + position["z"];
+                    }
+
+                    let lego = {
+                        type: "current",
+
+                        position: position,
+
+                        color: color,
+
+                        name: name,
+
+                        variation: variation
+                    }
+                    if (variation <= 0.8)
+                        lego["lego"] = add_LEGO(lego["color"],
+                            1,
+                            1,
+                            lego["position"]["x"],
+                            lego["position"]["y"],
+                            lego["position"]["z"],
+                            scene,
+                            false,
+                            lego["type"],
+                            lego["name"],
+                            false);
+
+                    plan_legos.set(lego["name"], lego);
+                }
+                //increase the varition
+                variation += 0.2;
             }
+
         }
-        let name = Array.from(plan_legos.keys())[0];
-        console.log(name);
-        /*
+        //TODO REPRENDRE LE NOUVEAU JSON DE BELAL
+        //the lego who need to be get
+        if (data[key][0].includes("get")) {
+
+            //only 5 legos to see
+            if (intensity >= 2) {
+                let width = computePlateLength(1);
+
+                //if there is one or multiple lego to take
+                if (typeof data[key][2] != "object") {
+                    let lego = scene.getObjectByName(data[key][2]);
+                    draw_borders(lego, width, width, "black", intensity);
+                } else {
+                    let iterator = parseInt(data[key][0][6]) / 2;
+                    for (let i = 0; i < iterator; i++) {
+                        let lego = scene.getObjectByName(data[key][2][i]);
+                        draw_borders(lego, width, width, "black", intensity);
+                    }
+                }
+                intensity--;
+            }
+
+        }
+    }
+    let name = Array.from(plan_legos.keys())[0];
+    console.log(name);
+    /*
             //the lego who will be move (have to exist)
             move = Object.keys(data)[0]
     
@@ -783,11 +794,52 @@ function updatePlan(file_plan) {
             } else {
                 //test();
             }*/
-    });
+
 }
 
 function updateLegos() {
+    //variable for the blinking variation and the border intensity
+    let variation = 0.2;
+    let intensity = 5;
 
+    //TODO if to change
+    if (true) {
+        for (let i = 0; i < plan.length; i++) {
+            key = Object.keys(plan[i]);
+
+            let step = plan[i][key];
+            console.log(step);
+
+
+
+            //set the blinking one 
+            //get the good place in the array
+            let place = 1;
+            if (step[2] != undefined) {
+                place = 2;
+            }
+
+            //get only the good information to an array
+            let positions = step[place].split(" ");
+            let color = positions[1].charAt(0);
+            positions.splice(0, 2);
+
+            //get the color
+            console.log(color);
+
+            //add blink at good position
+            for (let j = 0; j < positions.length; j++) {
+                console.log(positions[j]);
+
+                let position = {
+                    x: parseInt(positions[j].charAt(5) + positions[j].charAt(6)) - FloorWidth / 2,
+                    y: -(parseInt(positions[j].charAt(2) + positions[j].charAt(3)) - FloorHeight / 2),
+                    z: parseInt(positions[j].charAt(8))
+                }
+                console.log(position);
+            }
+        }
+    }
 }
 
 
