@@ -426,8 +426,13 @@ function setup_execution() {
     // this legos map contains the informations of the top legos in x,y coordinate
     legos = new Map();
 
-    // this legos map contains the informations of all the futures lego in x,y,é coordinate
+    // this action array contains the differents futures action of the robot
+    actions = new Array();
+
+    // this legos map contains the informations of all the futures lego in x,y,z coordinate
     plan_legos = new Map();
+
+
 
     stop_robot = false;
     oldGoal = -1;
@@ -564,6 +569,8 @@ function updatePlan(file_plan) {
     fetch(file_plan).then(function(resp) {
         return resp.json();
     }).then(function(data) {
+        actions = data;
+        console.log(actions);
 
         //variable for the blinking variation
         let variation = 0.2;
@@ -649,7 +656,7 @@ function updatePlan(file_plan) {
                 }
 
             }
-
+            //TODO REPRENDRE LE NOUVEAU JSON DE BELAL
             //the lego who need to be get
             if (data[key][0].includes("get")) {
 
@@ -777,9 +784,9 @@ function updatePlan(file_plan) {
                 //test();
             }*/
     });
+}
 
-
-
+function updateLegos() {
 
 }
 
