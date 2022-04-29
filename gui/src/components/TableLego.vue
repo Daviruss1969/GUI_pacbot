@@ -208,8 +208,108 @@ export default {
 
 
                 });
-                console.log(file_plan);
+                //update the lego and the goal who will be choose by the robot
+                instance.updatePlan(file_plan);
             });
+        },
+        updatePlan(file_plan){
+            //TODO if to change
+            var instance = this;
+
+            //eslint-disable-next-line
+            if (true) {
+                fetch(file_plan).then(function(resp) {
+                    return resp.json();
+                }).then(function(data) {
+                    instance.plan = data;
+                    instance.updateLegos();
+                });
+            } else {
+                instance.updateLegos();
+            }
+
+        },
+        updateLegos(){
+            //variable for the blinking variation and the border intensity
+
+            let variation = 0.2;
+            //eslint-disable-next-line
+            let intensity = 5;
+
+            //TODO IF TO CHANGE
+            //eslint-disable-next-line
+            if (true){
+                this.plan_legos.clear();
+                let max = 4;
+                if (this.plan.length < max){
+                    max = this.plan.length;
+                }
+                for (let i = 0; i < max; i++) {
+                    let key = Object.keys(this.plan[i]);
+
+                    let step = this.plan[i][key];
+                    //console.log(step);
+
+
+
+                    //set the blinking one 
+                    //get the good place in the array
+                    let place = 1;
+                    if (step[2] != undefined) {
+                        place = 2;
+                    }
+
+                    //get only the good information to an array
+                    let positions = step[place].split(" ");
+
+                    //get the color
+                    let color = positions[1].charAt(0);
+                    color = this.getColorFromData(color);
+                    positions.splice(0, 2);
+
+                    //add blink at good position
+                    for (let j = 0; j < positions.length; j++) {
+
+                        let name = positions[j];
+                        let position = {
+                            x: parseInt(positions[j].charAt(5) + positions[j].charAt(6)) - this.FloorWidth / 2,
+                            y: -(parseInt(positions[j].charAt(2) + positions[j].charAt(3)) - this.FloorHeight / 2),
+                            z: parseInt(positions[j].charAt(8))
+                        }
+
+                        let lego = {
+                            type: "current",
+
+                            position: position,
+
+                            color: color,
+
+                            name: name,
+
+                            variation: variation
+                        }
+
+                        lego["lego"] = this.add_LEGO(
+                            lego["color"],
+                            1,
+                            1,
+                            lego["position"]["x"],
+                            lego["position"]["y"],
+                            lego["position"]["z"],
+                            this.scene,
+                            false,
+                            lego["type"],
+                            lego["name"],
+                            false
+                        );
+                        
+                        this.plan_legos.set(lego["name"], lego);
+
+                    }
+                    variation+= 0.2;
+                }
+
+            }
         },
         addLight(scene) {
             const color = 0xFFFFFF;
@@ -262,25 +362,30 @@ export default {
             this.myVar = setInterval(this.blink_effect, 800);
         },
         blink_effect() {
-            console.log("todo");
-            /*plan_legos.forEach((value, key) => {
-                let lego = value["lego"];
-                var t = lego.material.opacity;
 
+            this.plan_legos.forEach((value) => {
+                let lego = value["lego"];
+                let t = lego.material.opacity;
+                let alphaTest;
                 if (t == 1) {
                     t = value["variation"];
+                    alphaTest = 0.1;
                 } else {
                     t = 1;
+                    alphaTest = 0;
                 }
 
                 for (let obj of lego.children) {
                     obj.material.transparent = true;
+                    obj.alphaTest = 0.1;
                     obj.material.opacity = t;
+                    obj.material.alphaTest = alphaTest;
                 }
 
                 lego.material.transparent = true;
                 lego.material.opacity = t;
-            })*/
+                lego.material.alphaTest = alphaTest;
+            })
         },
         getColorFromData(color_){
             //Choose the color
@@ -304,12 +409,16 @@ export default {
                 case 'l':
                     color = "light_green";
                     break;
+                case 'w':
+                    color = "white";
+                    break;
                 default:
                     color = "black";
                     break;
             }
             return color;
-        },add_LEGO(color, dim_x, dim_y, pos_x, pos_y, pos_z, scene, draggable, type, name = ""){
+        },
+        add_LEGO(color, dim_x, dim_y, pos_x, pos_y, pos_z, scene, draggable, type, name = ""){
             let x = this.computePlateLength(dim_x);
             let z = this.computePlateLength(dim_y);
 
@@ -397,7 +506,8 @@ export default {
 
             return cube;
 
-        }, getColor(val){
+        }, 
+        getColor(val){
             var codes = {
                 black: 0x191a1b,
                 white: 0xfafafa,
@@ -538,6 +648,12 @@ export default {
         startExecution(){
             this.stop_robot = false;
             this.read_robot_input();
+        },
+        stopExecution(){
+
+        }, 
+        resetExecution(){
+
         }
     },
     mounted(){

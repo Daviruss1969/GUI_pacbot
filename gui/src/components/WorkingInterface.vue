@@ -66,7 +66,6 @@ export default {
    },
    methods:{
        startEx(){
-           console.log("start");
 
            //press the button
             let button = document.querySelector('#start');
@@ -74,14 +73,13 @@ export default {
             this.$refs.child.startExecution();
        },
        stopEx(){
-           console.log("stop");
-
             //unpress the button
             let button = document.querySelector('#start');
             button.disabled = false;
+            this.$refs.child.stopExecution();
        },
        resetEx(){
-           console.log("reset");
+           //TODO
        }
    }
 }
