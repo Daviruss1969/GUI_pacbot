@@ -1,6 +1,6 @@
 <template>
     <div id = "container">
-        <TableLego></TableLego>
+        <TableLego ref="child"></TableLego>
         <div id="nav_panel">
             <div id="rotate">
                 <div id="top" class="nav_btn" title='Rotate left'>
@@ -51,9 +51,9 @@
             </svg>
         </div>-->
 
-        <button class="button" id="start" onclick="startExec()">Start</button>
-        <button class="button" id="stop" onclick="stopExec()">Stop</button>
-        <button class="button" id="reset" onclick="resetExec()">Reset</button>
+        <button class="button" id="start" @click="startEx()">Start</button>
+        <button class="button" id="stop" @click="stopEx()">Stop</button>
+        <button class="button" id="reset" @click="resetEx()">Reset</button>
     </div>
 </template>
 
@@ -63,6 +63,26 @@ export default {
    name:"WorkingInterface",
    components:{
        TableLego
+   },
+   methods:{
+       startEx(){
+           console.log("start");
+
+           //press the button
+            let button = document.querySelector('#start');
+            button.disabled = true;
+            this.$refs.child.startExecution();
+       },
+       stopEx(){
+           console.log("stop");
+
+            //unpress the button
+            let button = document.querySelector('#start');
+            button.disabled = false;
+       },
+       resetEx(){
+           console.log("reset");
+       }
    }
 }
 </script>

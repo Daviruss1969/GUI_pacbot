@@ -19,8 +19,8 @@ function computePlateDepth(depth) {
 }
 
 function createFloor(dim_x, dim_y, scene) {
-    x = computePlateLength(dim_x);
-    y = computePlateLength(dim_y);
+    let x = computePlateLength(dim_x);
+    let y = computePlateLength(dim_y);
     var geometry = new THREE.BoxGeometry(x, PLATE_HEIGHT, y);
     var material = new THREE.MeshBasicMaterial({ color: 0x00b300 });
     var table = new THREE.Mesh(geometry, material);
@@ -32,15 +32,15 @@ function createFloor(dim_x, dim_y, scene) {
 }
 
 function addTableStuds(dim_x, dim_y, scene) {
-    x = computePlateLength(dim_x);
-    y = computePlateLength(dim_y);
+    let x = computePlateLength(dim_x);
+    let y = computePlateLength(dim_y);
 
-    stud_levels = [];
+    let stud_levels = [];
 
     for (var i = 0; i < dim_x; i++) {
         stud_levels.push([]);
         for (var j = 0; j < dim_y; j++) {
-            stud = new THREE.Mesh(new THREE.CylinderGeometry(STUD_WIDTH / 2, STUD_WIDTH / 2, STUD_HEIGHT, STUD_NUM_SIDES), new THREE.MeshLambertMaterial({ color: 0x00b300 }));
+            let stud = new THREE.Mesh(new THREE.CylinderGeometry(STUD_WIDTH / 2, STUD_WIDTH / 2, STUD_HEIGHT, STUD_NUM_SIDES), new THREE.MeshLambertMaterial({ color: 0x00b300 }));
 
             stud.position.y = PLATE_HEIGHT + STUD_HEIGHT / 2
             stud.position.x = STUD_WIDTH / 2 + STUD_PADDING + i * (STUD_WIDTH + STUD_SPACING) - x / 2
@@ -48,7 +48,6 @@ function addTableStuds(dim_x, dim_y, scene) {
 
             stud_levels[i].push(0);
             stud.userData.id = i + "_" + j;
-
             scene.add(stud);
             table_studs.push(stud);
         }
@@ -220,13 +219,19 @@ function draw_borders(cube, x, z, color, width) {
 
     var width = basic_width * width;
 
+    console.log("width :");
+    console.log(width);
+
     var geom1 = new THREE.BoxGeometry(x, width, width);
     var mat1 = new THREE.MeshBasicMaterial({ color: "black" });
     var cube1 = new THREE.Mesh(geom1, mat1);
     cube1.position = cube.position;
+    console.log(cube1.position);
     cube1.position.y = cube1.position.y - LEGO_HEIGHT / 2;
     cube1.position.z = cube1.position.z + z / 2;
     cube.add(cube1);
+    console.log(cube1.position);
+    console.log(cube.position);
 
 
     var geom2 = new THREE.BoxGeometry(x, width, width);
@@ -327,6 +332,7 @@ function draw_borders(cube, x, z, color, width) {
 }
 
 function blink_effect() {
+    //console.log("todo");
     plan_legos.forEach((value, key) => {
         let lego = value["lego"];
         var t = lego.material.opacity;
@@ -386,19 +392,12 @@ function setup_execution() {
     FloorWidth = 28;
     FloorHeight = 11;
 
-
-
-    // table positions
-    MIN_X = -computePlateLength(FloorWidth / 2);
-    MIN_Y = -computePlateLength(FloorHeight / 2);
-    MAX_X = computePlateLength(FloorWidth / 2);
-    MAX_Y = computePlateLength(FloorHeight / 2);
-
     objects = [];
 
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
-
+    //console.log(window.innerWidth);
+    //console.log(window.innerHeight);
 
     init_pos_x = -1.902388126728884;
     init_pos_y = 195.6798407538288;
@@ -415,6 +414,8 @@ function setup_execution() {
     // LEGO table
     table_studs = [];
     stud_levels = createFloor(FloorWidth, FloorHeight, scene);
+    //console.log(table_studs);
+    //console.log(stud_levels);
 
 
     // light
@@ -436,11 +437,14 @@ function setup_execution() {
     plan = new Array();
 
     stop_robot = false;
-    oldGoal = -1;
-    oldMove = -1;
+
     current = undefined;
     previous = undefined;
+
+    //pour l'instant
     blink = "up";
+    oldGoal = -1;
+    oldMove = -1;
 
 
     //for the choose one
@@ -448,7 +452,7 @@ function setup_execution() {
     LEGO_move = undefined;
     lego_goal = undefined;
     lego_down = undefined;
-
+    //fin
 
     //variable for the blinking effect
     myVar = undefined;
@@ -808,7 +812,7 @@ function updateLegos() {
             key = Object.keys(plan[i]);
 
             let step = plan[i][key];
-            console.log(step);
+            //console.log(step);
 
 
 
@@ -825,18 +829,18 @@ function updateLegos() {
             positions.splice(0, 2);
 
             //get the color
-            console.log(color);
+            //console.log(color);
 
             //add blink at good position
             for (let j = 0; j < positions.length; j++) {
-                console.log(positions[j]);
+                //console.log(positions[j]);
 
                 let position = {
-                    x: parseInt(positions[j].charAt(5) + positions[j].charAt(6)) - FloorWidth / 2,
-                    y: -(parseInt(positions[j].charAt(2) + positions[j].charAt(3)) - FloorHeight / 2),
-                    z: parseInt(positions[j].charAt(8))
-                }
-                console.log(position);
+                        x: parseInt(positions[j].charAt(5) + positions[j].charAt(6)) - FloorWidth / 2,
+                        y: -(parseInt(positions[j].charAt(2) + positions[j].charAt(3)) - FloorHeight / 2),
+                        z: parseInt(positions[j].charAt(8))
+                    }
+                    //console.log(position);
             }
         }
     }
